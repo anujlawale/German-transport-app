@@ -44,7 +44,14 @@ export function VehicleCard({
   const idleFloat = useRef(new Animated.Value(0)).current;
   const idleWiggle = useRef(new Animated.Value(0)).current;
   const motion = useRef(createVehicleMotionValues()).current;
-  const { animatedStyle, cardSize, isDragging, panHandlers } = useVehicleDrag({
+  const {
+    cardSize,
+    dragScale,
+    dragTranslateX,
+    dragTranslateY,
+    isDragging,
+    panHandlers,
+  } = useVehicleDrag({
     vehicle,
     home,
     preferredZone: zones[vehicle.preferredZone],
@@ -132,31 +139,27 @@ export function VehicleCard({
     }
   }, [incorrectDropToken, motion]);
 
-  const idleStyle = {
-    transform: [
-      { translateY: idleFloat },
-      {
-        rotate: idleWiggle.interpolate({
-          inputRange: [-1, 0, 1],
-          outputRange: ["-2deg", "0deg", "2deg"],
-        }),
-      },
-    ],
-  };
-
-  const motionStyle = {
-    transform: [
-      { translateX: motion.slideX },
-      { translateY: motion.liftY },
-      {
-        rotate: motion.tilt.interpolate({
-          inputRange: [-2, 0, 2],
-          outputRange: ["-8deg", "0deg", "8deg"],
-        }),
-      },
-      { scale: motion.bounce },
-    ],
-  };
+  const combinedTransform = [
+    { translateX: dragTranslateX },
+    { translateY: dragTranslateY },
+    { scale: dragScale },
+    { translateY: idleFloat },
+    {
+      rotate: idleWiggle.interpolate({
+        inputRange: [-1, 0, 1],
+        outputRange: ["-2deg", "0deg", "2deg"],
+      }),
+    },
+    { translateX: motion.slideX },
+    { translateY: motion.liftY },
+    {
+      rotate: motion.tilt.interpolate({
+        inputRange: [-2, 0, 2],
+        outputRange: ["-8deg", "0deg", "8deg"],
+      }),
+    },
+    { scale: motion.bounce },
+  ] as const;
 
   return (
     <Animated.View
@@ -170,10 +173,8 @@ export function VehicleCard({
           backgroundColor: vehicle.color,
           zIndex: interactionEnabled && isDragging ? 10 : 0,
           elevation: interactionEnabled && isDragging ? 7 : 0,
+          transform: combinedTransform,
         },
-        animatedStyle,
-        idleStyle,
-        motionStyle,
       ]}
     >
       <Text style={styles.emoji}>{vehicle.emoji}</Text>

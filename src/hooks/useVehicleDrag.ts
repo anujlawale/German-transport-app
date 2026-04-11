@@ -214,9 +214,9 @@ export function useVehicleDrag({
     cardSize: CARD_SIZE,
     isDragging,
     panHandlers: panResponder.panHandlers,
-    animatedStyle: {
-      transform: [{ translateX: pan.x }, { translateY: pan.y }, { scale }],
-    },
+    dragTranslateX: pan.x,
+    dragTranslateY: pan.y,
+    dragScale: scale,
   };
 }
 

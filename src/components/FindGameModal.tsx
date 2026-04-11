@@ -82,7 +82,7 @@ function hexToRgb(hex: string) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(12, 29, 45, 0.42)",
+    backgroundColor: "rgba(12, 29, 45, 0.6)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,

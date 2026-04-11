@@ -66,7 +66,6 @@ const SCENE_ITEMS = [
 
 export default function App() {
   const { width, height } = useWindowDimensions();
-  const [selectedLabel, setSelectedLabel] = useState("Tippe auf ein Fahrzeug");
   const [successMessage, setSuccessMessage] = useState("");
   const [highlightedZoneId, setHighlightedZoneId] = useState<ZoneId | null>(null);
   const [zoneBurstId, setZoneBurstId] = useState<ZoneId | null>(null);
@@ -94,54 +93,80 @@ export default function App() {
   const zoneBurstOpacity = useRef(new Animated.Value(0)).current;
   const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const zones = useMemo<Record<ZoneId, ZoneLayout>>(() => {
+  const layout = useMemo(() => {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
+    const vehicleSize = 124;
+    const playAreaTop = Math.max(272, Math.min(320, safeHeight * 0.34));
+    const skyHeight = Math.max(118, Math.min(156, safeHeight * 0.18));
+    const roadHeight = Math.max(82, Math.min(104, safeHeight * 0.14));
+    const trackHeight = Math.max(70, Math.min(84, safeHeight * 0.11));
+    const skyY = playAreaTop;
+    const vehicleRowY = skyY + skyHeight + 20;
+    const roadY = Math.min(
+      Math.max(vehicleRowY + vehicleSize + 20, safeHeight * 0.62),
+      safeHeight - trackHeight - roadHeight - 94,
+    );
+    const trackY = Math.min(
+      Math.max(roadY + roadHeight + 22, safeHeight * 0.79),
+      safeHeight - trackHeight - 42,
+    );
+    const gap = Math.max(16, (safeWidth - 48 - vehicleSize * 3) / 2);
 
+    return {
+      safeWidth,
+      safeHeight,
+      vehicleSize,
+      skyY,
+      skyHeight,
+      vehicleRowY,
+      roadY,
+      roadHeight,
+      trackY,
+      trackHeight,
+      gap,
+    };
+  }, [height, width]);
+
+  const zones = useMemo<Record<ZoneId, ZoneLayout>>(() => {
     return {
       sky: {
         id: "sky",
         title: "Himmel",
         x: 16,
-        y: 138,
-        width: safeWidth - 32,
-        height: safeHeight * 0.22,
+        y: layout.skyY,
+        width: layout.safeWidth - 32,
+        height: layout.skyHeight,
         color: "#cbefff",
       },
       road: {
         id: "road",
         title: "Straße",
         x: 16,
-        y: safeHeight * 0.58,
-        width: safeWidth - 32,
-        height: safeHeight * 0.14,
+        y: layout.roadY,
+        width: layout.safeWidth - 32,
+        height: layout.roadHeight,
         color: "#f8d88a",
       },
       track: {
         id: "track",
         title: "Schiene",
         x: 16,
-        y: safeHeight * 0.77,
-        width: safeWidth - 32,
-        height: safeHeight * 0.11,
+        y: layout.trackY,
+        width: layout.safeWidth - 32,
+        height: layout.trackHeight,
         color: "#ffc4bf",
       },
     };
-  }, [height, width]);
+  }, [layout]);
 
   const homes = useMemo<VehicleHomeMap>(() => {
-    const safeWidth = Math.max(width, 360);
-    const vehicleSize = 124;
-    const rowY = zones.sky.y - 8;
-    const gap = Math.max(16, (safeWidth - 48 - vehicleSize * 3) / 2);
-
     return {
-      bus: { x: 16, y: rowY },
-      plane: { x: 16 + vehicleSize + gap, y: rowY - 4 },
-      train: { x: safeWidth - vehicleSize - 16, y: rowY },
+      bus: { x: 16, y: layout.vehicleRowY },
+      plane: { x: 16 + layout.vehicleSize + layout.gap, y: layout.vehicleRowY - 4 },
+      train: { x: layout.safeWidth - layout.vehicleSize - 16, y: layout.vehicleRowY },
     };
-  }, [width, zones]);
+  }, [layout]);
 
   useEffect(() => {
     void initializeSoundEffects();
@@ -184,12 +209,20 @@ export default function App() {
     };
   }, [successMessage]);
 
+  useEffect(() => {
+    if (!isGameMode || !isFindGameModalVisible || !gamePrompt) {
+      return;
+    }
+
+    clearInteractionQueue();
+    void speakGerman(gamePrompt);
+  }, [gamePrompt, isFindGameModalVisible, isGameMode]);
+
   function handleTap(vehicle: VehicleDefinition) {
     if (isFindGameModalVisible) {
       return;
     }
 
-    setSelectedLabel(vehicle.label);
     bumpVehicleToken(setTapTokens, vehicle.id);
 
     if (isGameMode) {
@@ -232,7 +265,6 @@ export default function App() {
   }
 
   function handleCorrectDrop(vehicle: VehicleDefinition) {
-    setSelectedLabel(vehicle.label);
     setHighlightedZoneId(vehicle.preferredZone);
     setGameFeedback((current) => (isGameMode ? "Super!" : current));
 
@@ -281,7 +313,6 @@ export default function App() {
       return;
     }
 
-    setSelectedLabel(label);
     clearInteractionQueue();
     setTimeout(() => {
       void speakGerman(phrase ?? label);
@@ -407,7 +438,6 @@ export default function App() {
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
-    setSelectedLabel("Freies Spiel");
     clearInteractionQueue();
     stopAllSoundEffects();
     void stopGermanSpeech();
@@ -423,7 +453,7 @@ export default function App() {
     setResetTrigger((current) => current + 1);
   }
 
-  async function askNextQuestion(
+  function askNextQuestion(
     previousVehicleId?: VehicleId,
     modalOptions?: {
       openModal?: boolean;
@@ -442,8 +472,6 @@ export default function App() {
         actionLabel: modalOptions.actionLabel,
       });
     }
-    clearInteractionQueue();
-    await speakGerman(nextPrompt);
   }
 
   function openFindGameModal(options?: {
@@ -458,12 +486,12 @@ export default function App() {
   }
 
   function handleFindGameModalAction() {
-    setIsFindGameModalVisible(false);
-
     if (findGameActionLabel === "Nochmal hören" && gamePrompt) {
       clearInteractionQueue();
       void speakGerman(gamePrompt);
     }
+
+    setIsFindGameModalVisible(false);
   }
 
   function getGamePrompt(vehicle: VehicleDefinition) {
@@ -501,218 +529,219 @@ export default function App() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="dark" />
         <View style={styles.container}>
-        <Pressable
-          delayLongPress={700}
-          onLongPress={() => setShowParentSettings(true)}
-          style={styles.parentIconButton}
-        >
-          <Text style={styles.parentIconText}>👪</Text>
-        </Pressable>
-
-        {SCENE_ITEMS.map((item) => (
-          <SceneWordButton
-            key={item.id}
-            disabled={!isFreePlayMode || isGameMode || isFindGameModalVisible}
-            onPress={() => handleSceneWordTap(item.label, item.phrase)}
-            style={styles[item.style]}
-          >
-            {item.style === "cloudOne" || item.style === "cloudTwo" ? (
-              <>
-                <View style={styles.cloudPuffLeft} />
-                <View style={styles.cloudPuffMiddle} />
-                <View style={styles.cloudPuffRight} />
-              </>
-            ) : null}
-            {item.style === "sun" ? <View style={styles.sunInner} /> : null}
-            {item.style === "station" ? (
-              <>
-                <Text style={styles.sceneEmoji}>🚉</Text>
-                <Text style={styles.sceneLabel}>Bahnhof</Text>
-              </>
-            ) : null}
-            {item.style === "airport" ? (
-              <>
-                <Text style={styles.sceneEmoji}>🛫</Text>
-                <Text style={styles.sceneLabel}>Flughafen</Text>
-              </>
-            ) : null}
-          </SceneWordButton>
-        ))}
-
-        <View style={styles.headerWrap}>
-          <Text style={styles.eyebrow}>Spielen und Sprechen</Text>
-          <Text style={styles.title}>Transport Deutsch</Text>
-        </View>
-        <Text style={styles.subtitle}>{selectedLabel}</Text>
-
-        <View style={styles.modeRow}>
           <Pressable
-            style={[styles.modeButton, isFreePlayMode ? styles.modeButtonActive : null]}
-            onPress={startFreePlay}
+            delayLongPress={700}
+            onLongPress={() => setShowParentSettings(true)}
+            style={styles.parentIconButton}
           >
-            <Text style={styles.modeButtonText}>Free Play</Text>
+            <Text style={styles.parentIconText}>👪</Text>
           </Pressable>
-          <Pressable
-            style={[styles.modeButton, isGameMode ? styles.modeButtonActive : null]}
-            onPress={startFindGame}
-          >
-            <Text style={styles.modeButtonText}>Find Game</Text>
-          </Pressable>
-        </View>
 
-        <View style={styles.modeHintBubble}>
-          <Text style={styles.modeHintText}>
-            {isGameMode ? MODE_HINTS.game : MODE_HINTS.freePlay}
-          </Text>
-        </View>
+          {SCENE_ITEMS.map((item) => (
+            <SceneWordButton
+              key={item.id}
+              disabled={!isFreePlayMode || isGameMode || isFindGameModalVisible}
+              onPress={() => handleSceneWordTap(item.label, item.phrase)}
+              style={styles[item.style]}
+            >
+              {item.style === "cloudOne" || item.style === "cloudTwo" ? (
+                <>
+                  <View style={styles.cloudPuffLeft} />
+                  <View style={styles.cloudPuffMiddle} />
+                  <View style={styles.cloudPuffRight} />
+                </>
+              ) : null}
+              {item.style === "sun" ? <View style={styles.sunInner} /> : null}
+              {item.style === "station" ? (
+                <>
+                  <Text style={styles.sceneEmoji}>🚉</Text>
+                  <Text style={styles.sceneLabel}>Bahnhof</Text>
+                </>
+              ) : null}
+              {item.style === "airport" ? (
+                <>
+                  <Text style={styles.sceneEmoji}>🛫</Text>
+                  <Text style={styles.sceneLabel}>Flughafen</Text>
+                </>
+              ) : null}
+            </SceneWordButton>
+          ))}
 
-        {successMessage ? (
-          <View style={styles.successBubble}>
-            <Text style={styles.successText}>{successMessage}</Text>
+          <View style={styles.headerWrap}>
+            <Text style={styles.eyebrow}>Spielen und Sprechen</Text>
+            <Text style={styles.title}>Transport Deutsch</Text>
           </View>
-        ) : null}
 
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.sparkleBurst,
-            {
-              opacity: sparkleOpacity,
-              transform: [{ scale: sparkleScale }],
-            },
-          ]}
-        >
-          <Text style={styles.sparkleText}>✨</Text>
-          <Text style={styles.sparkleText}>⭐</Text>
-          <Text style={styles.sparkleText}>✨</Text>
-        </Animated.View>
+          <View style={styles.modeArea}>
+            <View style={styles.modeRow}>
+              <Pressable
+                style={[styles.modeButton, isFreePlayMode ? styles.modeButtonActive : null]}
+                onPress={startFreePlay}
+              >
+                <Text style={styles.modeButtonText}>Free Play</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modeButton, isGameMode ? styles.modeButtonActive : null]}
+                onPress={startFindGame}
+              >
+                <Text style={styles.modeButtonText}>Find Game</Text>
+              </Pressable>
+            </View>
 
-        {Object.values(zones).map((zone) => (
-          <DropZone
-            key={zone.id}
-            zone={zone}
-            isHighlighted={highlightedZoneId === zone.id}
-          />
-        ))}
+            <View style={styles.modeHintBubble}>
+              <Text style={styles.modeHintText}>
+                {isGameMode ? MODE_HINTS.game : MODE_HINTS.freePlay}
+              </Text>
+            </View>
+          </View>
 
-        {zoneBurstId && zoneBurstStyle ? (
+          {successMessage ? (
+            <View style={styles.successBubble}>
+              <Text style={styles.successText}>{successMessage}</Text>
+            </View>
+          ) : null}
+
           <Animated.View
             pointerEvents="none"
             style={[
-              styles.zoneBurst,
-              zoneBurstStyle,
+              styles.sparkleBurst,
               {
-                opacity: zoneBurstOpacity,
-                transform: [{ scale: zoneBurstScale }],
+                opacity: sparkleOpacity,
+                transform: [{ scale: sparkleScale }],
               },
             ]}
           >
-            <Text style={styles.zoneBurstText}>⭐</Text>
-            <Text style={styles.zoneBurstText}>✨</Text>
-            <Text style={styles.zoneBurstText}>⭐</Text>
+            <Text style={styles.sparkleText}>✨</Text>
+            <Text style={styles.sparkleText}>⭐</Text>
+            <Text style={styles.sparkleText}>✨</Text>
           </Animated.View>
-        ) : null}
 
-        <View style={[styles.roadStripe, { top: zones.road.y + 34 }]} />
-        <View style={[styles.roadStripe, { top: zones.road.y + 74 }]} />
-        <View style={[styles.trackLine, { top: zones.track.y + 20 }]} />
-        <View style={[styles.trackLine, { top: zones.track.y + 72 }]} />
-        <View style={[styles.trackTieRow, { top: zones.track.y + 24 }]} />
+          {Object.values(zones).map((zone) => (
+            <DropZone
+              key={zone.id}
+              zone={zone}
+              isHighlighted={highlightedZoneId === zone.id}
+            />
+          ))}
 
-        {VEHICLES.map((vehicle) => (
-          <VehicleCard
-            key={vehicle.id}
-            vehicle={vehicle}
-            home={homes[vehicle.id]}
-            zones={zones}
-            resetTrigger={resetTrigger}
-            interactionEnabled={!isFindGameModalVisible}
-            tapAnimationToken={tapTokens[vehicle.id]}
-            celebrationToken={celebrationTokens[vehicle.id]}
-            incorrectDropToken={incorrectDropTokens[vehicle.id]}
-            onTap={handleTap}
-            onMatch={handleCorrectDrop}
-            onIncorrectDrop={handleIncorrectDrop}
-            onDragUpdate={handleDragUpdate}
-          />
-        ))}
+          {zoneBurstId && zoneBurstStyle ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.zoneBurst,
+                zoneBurstStyle,
+                {
+                  opacity: zoneBurstOpacity,
+                  transform: [{ scale: zoneBurstScale }],
+                },
+              ]}
+            >
+              <Text style={styles.zoneBurstText}>⭐</Text>
+              <Text style={styles.zoneBurstText}>✨</Text>
+              <Text style={styles.zoneBurstText}>⭐</Text>
+            </Animated.View>
+          ) : null}
 
-        <View pointerEvents="none" style={styles.footerBubble}>
-          <Text style={styles.footerText}>Tippe oder ziehe und lerne.</Text>
-        </View>
+          <View style={[styles.roadStripe, { top: zones.road.y + 34 }]} />
+          <View style={[styles.roadStripe, { top: zones.road.y + 74 }]} />
+          <View style={[styles.trackLine, { top: zones.track.y + 20 }]} />
+          <View style={[styles.trackLine, { top: zones.track.y + 72 }]} />
+          <View style={[styles.trackTieRow, { top: zones.track.y + 24 }]} />
 
-        <FindGameModal
-          visible={isGameMode && isFindGameModalVisible}
-          promptText={gamePrompt}
-          helperText={findGameHelperText}
-          actionLabel={findGameActionLabel}
-          onClose={closeFindGame}
-          onRetry={handleFindGameModalAction}
-        />
+          {VEHICLES.map((vehicle) => (
+            <VehicleCard
+              key={vehicle.id}
+              vehicle={vehicle}
+              home={homes[vehicle.id]}
+              zones={zones}
+              resetTrigger={resetTrigger}
+              interactionEnabled={!isFindGameModalVisible}
+              tapAnimationToken={tapTokens[vehicle.id]}
+              celebrationToken={celebrationTokens[vehicle.id]}
+              incorrectDropToken={incorrectDropTokens[vehicle.id]}
+              onTap={handleTap}
+              onMatch={handleCorrectDrop}
+              onIncorrectDrop={handleIncorrectDrop}
+              onDragUpdate={handleDragUpdate}
+            />
+          ))}
 
-        {showParentSettings ? (
-          <View style={styles.parentOverlay}>
-            <View style={styles.parentCard}>
-              <Text style={styles.parentTitle}>Parent Settings</Text>
-              <Text style={styles.parentHint}>Long-press the corner icon to open.</Text>
-
-              <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Speech</Text>
-                <Pressable
-                  style={[styles.toggleButton, speechOn ? styles.toggleOn : styles.toggleOff]}
-                  onPress={toggleSpeech}
-                >
-                  <Text style={styles.toggleText}>{speechOn ? "On" : "Off"}</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Sounds</Text>
-                <Pressable
-                  style={[styles.toggleButton, soundsOn ? styles.toggleOn : styles.toggleOff]}
-                  onPress={toggleSounds}
-                >
-                  <Text style={styles.toggleText}>{soundsOn ? "On" : "Off"}</Text>
-                </Pressable>
-              </View>
-
-              <Text style={styles.settingSectionTitle}>Difficulty</Text>
-              <View style={styles.difficultyRow}>
-                {(["easy", "medium", "advanced"] as DifficultyLevel[]).map((level) => (
-                  <Pressable
-                    key={level}
-                    style={[
-                      styles.difficultyButton,
-                      difficulty === level ? styles.difficultyButtonActive : null,
-                    ]}
-                    onPress={() => setDifficulty(level)}
-                  >
-                    <Text style={styles.difficultyLabel}>
-                      {level === "easy"
-                        ? "Easy"
-                        : level === "medium"
-                          ? "Medium"
-                          : "Advanced"}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.difficultyHint}>{DIFFICULTY_DETAILS[difficulty]}</Text>
-
-              <Pressable style={styles.resetButton} onPress={resetVehiclesToDefault}>
-                <Text style={styles.resetButtonText}>Reset Vehicles</Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.closeParentButton}
-                onPress={() => setShowParentSettings(false)}
-              >
-                <Text style={styles.closeParentButtonText}>Close</Text>
-              </Pressable>
-            </View>
+          <View pointerEvents="none" style={styles.footerBubble}>
+            <Text style={styles.footerText}>Tippe oder ziehe und lerne.</Text>
           </View>
-        ) : null}
+
+          <FindGameModal
+            visible={isGameMode && isFindGameModalVisible}
+            promptText={gamePrompt}
+            helperText={findGameHelperText}
+            actionLabel={findGameActionLabel}
+            onClose={closeFindGame}
+            onRetry={handleFindGameModalAction}
+          />
+
+          {showParentSettings ? (
+            <View style={styles.parentOverlay}>
+              <View style={styles.parentCard}>
+                <Text style={styles.parentTitle}>Parent Settings</Text>
+                <Text style={styles.parentHint}>Long-press the corner icon to open.</Text>
+
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingLabel}>Speech</Text>
+                  <Pressable
+                    style={[styles.toggleButton, speechOn ? styles.toggleOn : styles.toggleOff]}
+                    onPress={toggleSpeech}
+                  >
+                    <Text style={styles.toggleText}>{speechOn ? "On" : "Off"}</Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingLabel}>Sounds</Text>
+                  <Pressable
+                    style={[styles.toggleButton, soundsOn ? styles.toggleOn : styles.toggleOff]}
+                    onPress={toggleSounds}
+                  >
+                    <Text style={styles.toggleText}>{soundsOn ? "On" : "Off"}</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.settingSectionTitle}>Difficulty</Text>
+                <View style={styles.difficultyRow}>
+                  {(["easy", "medium", "advanced"] as DifficultyLevel[]).map((level) => (
+                    <Pressable
+                      key={level}
+                      style={[
+                        styles.difficultyButton,
+                        difficulty === level ? styles.difficultyButtonActive : null,
+                      ]}
+                      onPress={() => setDifficulty(level)}
+                    >
+                      <Text style={styles.difficultyLabel}>
+                        {level === "easy"
+                          ? "Easy"
+                          : level === "medium"
+                            ? "Medium"
+                            : "Advanced"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Text style={styles.difficultyHint}>{DIFFICULTY_DETAILS[difficulty]}</Text>
+
+                <Pressable style={styles.resetButton} onPress={resetVehiclesToDefault}>
+                  <Text style={styles.resetButtonText}>Reset Vehicles</Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.closeParentButton}
+                  onPress={() => setShowParentSettings(false)}
+                >
+                  <Text style={styles.closeParentButtonText}>Close</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
         </View>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -831,17 +860,10 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#13415c",
   },
-  subtitle: {
-    marginTop: 12,
-    textAlign: "center",
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#ffffff",
-    paddingHorizontal: 24,
-    ...createTextGlow("rgba(18, 62, 86, 0.18)", 2, 6),
+  modeArea: {
+    marginTop: 22,
   },
   modeRow: {
-    marginTop: 18,
     flexDirection: "row",
     justifyContent: "center",
     gap: 14,
