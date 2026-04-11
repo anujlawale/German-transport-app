@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Transport Deutsch",
+    "slug": "transport-deutsch",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#9edcff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.example.transportdeutsch",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#9edcff"
+      }
+    }
+  }
+}
