@@ -48,23 +48,15 @@ export function useVehicleDrag({
       return;
     }
 
-      Animated.parallel([
-      Animated.spring(pan, {
-        toValue: home,
-        useNativeDriver: false,
-        speed: 16,
-        bounciness: 5,
-      }),
-      Animated.spring(scale, {
+    Animated.spring(scale, {
         toValue: 1,
         useNativeDriver: false,
         speed: 16,
         bounciness: 5,
-      }),
-    ]).start();
+      }).start();
     setIsDragging(false);
     onDragUpdate({ isDragging: false, isNearPreferredZone: false });
-  }, [home, interactionEnabled, onDragUpdate, pan, scale]);
+  }, [interactionEnabled, onDragUpdate, scale]);
 
   useEffect(() => {
     Animated.parallel([

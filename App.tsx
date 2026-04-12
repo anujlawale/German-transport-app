@@ -463,6 +463,7 @@ export default function App() {
   ) {
     const nextVehicle = pickNextVehicle(previousVehicleId);
     const nextPrompt = getGamePrompt(nextVehicle);
+    setResetTrigger((current) => current + 1);
     setTargetVehicleId(nextVehicle.id);
     setGameFeedback("");
     setGamePrompt(nextPrompt);

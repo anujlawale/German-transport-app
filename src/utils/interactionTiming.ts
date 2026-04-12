@@ -19,10 +19,12 @@ export const INTERACTION_TIMING = {
   },
   completion: {
     successDelayMs: 560,
-    speechDelayMs: 900,
+    speechDelayMs: 2200,
   },
   game: {
-    nextPromptDelayMs: 1400,
+    // Leaves enough room for the completion phrase to finish before the next
+    // Find Game prompt starts speaking and takes over the audio channel.
+    nextPromptDelayMs: 4600,
   },
   feedback: {
     successBubbleDurationMs: 1800,

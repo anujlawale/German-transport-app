@@ -171,8 +171,8 @@ export function VehicleCard({
           width: cardSize,
           height: cardSize,
           backgroundColor: vehicle.color,
-          zIndex: interactionEnabled && isDragging ? 10 : 0,
-          elevation: interactionEnabled && isDragging ? 7 : 0,
+          zIndex: isDragging ? 10 : 6,
+          elevation: isDragging ? 7 : 6,
           transform: combinedTransform,
         },
       ]}
