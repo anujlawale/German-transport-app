@@ -230,6 +230,6 @@ function isNearZone(x: number, y: number, zone: ZoneLayout) {
 function getZoneSnapPoint(zone: ZoneLayout): Point {
   return {
     x: zone.x + zone.width / 2 - CARD_SIZE / 2,
-    y: zone.y + zone.height / 2 - CARD_SIZE / 2,
+    y: zone.y + zone.height / 2 - CARD_SIZE / 2 - 18,
   };
 }

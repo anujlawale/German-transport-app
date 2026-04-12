@@ -68,13 +68,14 @@ export function DropZone({ zone, isHighlighted }: DropZoneProps) {
 const styles = StyleSheet.create({
   zone: {
     position: "absolute",
+    zIndex: 0,
     borderRadius: 30,
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.72)",
     justifyContent: "center",
     alignItems: "center",
     ...(Platform.OS === "web" ? {} : { shadowColor: "#ffffff" }),
-    elevation: 4,
+    elevation: 0,
   },
   label: {
     paddingHorizontal: 18,

@@ -163,10 +163,10 @@ export function VehicleCard({
   ] as const;
 
   const cardLayerStyle = isDragging
-    ? { zIndex: 10, elevation: 7 }
+    ? { zIndex: 30, elevation: 12 }
     : isSnapped
-      ? { zIndex: 8, elevation: 6 }
-      : { zIndex: 2, elevation: 2 };
+      ? { zIndex: 20, elevation: 10 }
+      : { zIndex: 5, elevation: 2 };
 
   return (
     <Animated.View
