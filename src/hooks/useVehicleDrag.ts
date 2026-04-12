@@ -42,6 +42,7 @@ export function useVehicleDrag({
   const pan = useRef(new Animated.ValueXY(home)).current;
   const scale = useRef(new Animated.Value(1)).current;
   const [isDragging, setIsDragging] = useState(false);
+  const [isSnapped, setIsSnapped] = useState(false);
 
   useEffect(() => {
     if (interactionEnabled) {
@@ -49,11 +50,11 @@ export function useVehicleDrag({
     }
 
     Animated.spring(scale, {
-        toValue: 1,
-        useNativeDriver: false,
-        speed: 16,
-        bounciness: 5,
-      }).start();
+      toValue: 1,
+      useNativeDriver: false,
+      speed: 16,
+      bounciness: 5,
+    }).start();
     setIsDragging(false);
     onDragUpdate({ isDragging: false, isNearPreferredZone: false });
   }, [interactionEnabled, onDragUpdate, scale]);
@@ -74,6 +75,7 @@ export function useVehicleDrag({
       }),
     ]).start();
     setIsDragging(false);
+    setIsSnapped(false);
     onDragUpdate({ isDragging: false, isNearPreferredZone: false });
   }, [home, onDragUpdate, pan, resetTrigger, scale]);
 
@@ -87,6 +89,7 @@ export function useVehicleDrag({
             return;
           }
           setIsDragging(true);
+          setIsSnapped(false);
           pan.stopAnimation();
           Animated.spring(scale, {
             toValue: 1.08,
@@ -173,6 +176,7 @@ export function useVehicleDrag({
       ]).start();
 
       setIsDragging(false);
+      setIsSnapped(true);
       onDragUpdate({ isDragging: false, isNearPreferredZone: false });
       onMatch(vehicle);
       return;
@@ -199,12 +203,14 @@ export function useVehicleDrag({
     ]).start();
 
     setIsDragging(false);
+    setIsSnapped(false);
     onDragUpdate({ isDragging: false, isNearPreferredZone: false });
   }
 
   return {
     cardSize: CARD_SIZE,
     isDragging,
+    isSnapped,
     panHandlers: panResponder.panHandlers,
     dragTranslateX: pan.x,
     dragTranslateY: pan.y,

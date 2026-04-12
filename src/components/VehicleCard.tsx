@@ -50,6 +50,7 @@ export function VehicleCard({
     dragTranslateX,
     dragTranslateY,
     isDragging,
+    isSnapped,
     panHandlers,
   } = useVehicleDrag({
     vehicle,
@@ -161,6 +162,12 @@ export function VehicleCard({
     { scale: motion.bounce },
   ] as const;
 
+  const cardLayerStyle = isDragging
+    ? { zIndex: 10, elevation: 7 }
+    : isSnapped
+      ? { zIndex: 8, elevation: 6 }
+      : { zIndex: 2, elevation: 2 };
+
   return (
     <Animated.View
       {...panHandlers}
@@ -171,10 +178,9 @@ export function VehicleCard({
           width: cardSize,
           height: cardSize,
           backgroundColor: vehicle.color,
-          zIndex: isDragging ? 10 : 6,
-          elevation: isDragging ? 7 : 6,
           transform: combinedTransform,
         },
+        cardLayerStyle,
       ]}
     >
       <Text style={styles.emoji}>{vehicle.emoji}</Text>
