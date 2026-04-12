@@ -158,7 +158,7 @@ function stopMotion(motion: VehicleMotionValues) {
 function springScale(value: Animated.Value, toValue: number) {
   return Animated.spring(value, {
     toValue,
-    useNativeDriver: true,
+    useNativeDriver: false,
     speed: 18,
     bounciness: 8,
   });
@@ -169,7 +169,7 @@ function timingX(value: Animated.Value, toValue: number, duration: number) {
     toValue,
     duration,
     easing: Easing.out(Easing.ease),
-    useNativeDriver: true,
+    useNativeDriver: false,
   });
 }
 
@@ -178,7 +178,7 @@ function timingLift(value: Animated.Value, toValue: number, duration: number) {
     toValue,
     duration,
     easing: Easing.out(Easing.ease),
-    useNativeDriver: true,
+    useNativeDriver: false,
   });
 }
 
@@ -187,6 +187,6 @@ function timingTilt(value: Animated.Value, toValue: number, duration: number) {
     toValue,
     duration,
     easing: Easing.out(Easing.ease),
-    useNativeDriver: true,
+    useNativeDriver: false,
   });
 }

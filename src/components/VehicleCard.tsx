@@ -78,13 +78,13 @@ export function VehicleCard({
           toValue: -4,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(idleFloat, {
           toValue: 0,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     );
@@ -95,19 +95,19 @@ export function VehicleCard({
           toValue: 1,
           duration: 1400,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(idleWiggle, {
           toValue: -1,
           duration: 1400,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(idleWiggle, {
           toValue: 0,
           duration: 1400,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     );

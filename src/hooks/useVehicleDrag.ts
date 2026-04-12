@@ -48,7 +48,7 @@ export function useVehicleDrag({
       return;
     }
 
-    Animated.parallel([
+      Animated.parallel([
       Animated.spring(pan, {
         toValue: home,
         useNativeDriver: false,
@@ -57,7 +57,7 @@ export function useVehicleDrag({
       }),
       Animated.spring(scale, {
         toValue: 1,
-        useNativeDriver: true,
+        useNativeDriver: false,
         speed: 16,
         bounciness: 5,
       }),
@@ -76,7 +76,7 @@ export function useVehicleDrag({
       }),
       Animated.spring(scale, {
         toValue: 1,
-        useNativeDriver: true,
+        useNativeDriver: false,
         speed: 16,
         bounciness: 5,
       }),
@@ -98,7 +98,7 @@ export function useVehicleDrag({
           pan.stopAnimation();
           Animated.spring(scale, {
             toValue: 1.08,
-            useNativeDriver: true,
+            useNativeDriver: false,
             speed: 18,
             bounciness: 6,
           }).start();
@@ -174,7 +174,7 @@ export function useVehicleDrag({
         }),
         Animated.spring(scale, {
           toValue: 1,
-          useNativeDriver: true,
+          useNativeDriver: false,
           speed: 18,
           bounciness: 6,
         }),
@@ -200,7 +200,7 @@ export function useVehicleDrag({
       }),
       Animated.spring(scale, {
         toValue: 1,
-        useNativeDriver: true,
+        useNativeDriver: false,
         speed: 16,
         bounciness: 5,
       }),
