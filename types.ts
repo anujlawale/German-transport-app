@@ -4,6 +4,7 @@ export type ZoneId = "sky" | "road" | "track";
 export type ItemCategory = "transport" | "profession";
 export type ItemAnimationStyle = "road" | "sky" | "track" | "character";
 export type ItemSoundEffect = "bus" | "plane" | "train";
+export type BookId = ItemCategory | "mixed";
 
 export type DifficultyLevel = "easy" | "medium" | "advanced";
 
@@ -21,10 +22,16 @@ export type ItemDefinition = {
   soundEffect: ItemSoundEffect;
 };
 
+export type PictureBookDefinition = {
+  id: BookId;
+  label: string;
+  emoji: string;
+  color: string;
+  accentColor: string;
+  description: string;
+};
+
 export type Point = {
   x: number;
   y: number;
 };
-
-export type VehicleId = ItemId;
-export type VehicleDefinition = ItemDefinition;

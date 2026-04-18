@@ -11,9 +11,9 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { FindGameModal } from "./src/components/FindGameModal";
+import { ItemCard } from "./src/components/ItemCard";
 import { SceneWordButton } from "./src/components/SceneWordButton";
-import { VehicleCard } from "./src/components/VehicleCard";
-import { ITEMS } from "./src/data/items";
+import { getItemsForBook, ITEMS, PICTURE_BOOKS } from "./src/data/items";
 import { setSpeechEnabled, speakGerman, stopGermanSpeech } from "./src/utils/audio";
 import {
   clearInteractionQueue,
@@ -31,7 +31,7 @@ import {
   stopAllSoundEffects,
   stopBackgroundMusic,
 } from "./src/utils/soundEffects";
-import { DifficultyLevel, ItemDefinition, ItemId } from "./types";
+import { BookId, DifficultyLevel, ItemDefinition, ItemId, PictureBookDefinition } from "./types";
 
 type ItemHomeMap = Record<ItemId, { x: number; y: number }>;
 type ItemTokenMap = Record<ItemId, number>;
@@ -74,7 +74,7 @@ const SCENE_ITEMS = [
   },
 ] as const;
 
-const INITIAL_VISIBLE_ITEMS = createItemSet();
+const INITIAL_VISIBLE_ITEMS = createItemSetForBook("transport");
 const PRAISE_MESSAGES = [
   "Ja, genau!",
   "Wunderbar!",
@@ -90,11 +90,15 @@ export default function App() {
   const [visibleItems, setVisibleItems] = useState<ItemDefinition[]>(INITIAL_VISIBLE_ITEMS);
   const [successMessage, setSuccessMessage] = useState("");
   const [wrongMessage, setWrongMessage] = useState("");
+  const [activeBookId, setActiveBookId] = useState<BookId>("transport");
+  const [previewBookIndex, setPreviewBookIndex] = useState(() =>
+    PICTURE_BOOKS.findIndex((book) => book.id === "transport"),
+  );
   const [isFreePlayMode, setIsFreePlayMode] = useState(true);
   const [isGameMode, setIsGameMode] = useState(false);
   const [isFindGameModalVisible, setIsFindGameModalVisible] = useState(false);
   const [findGameHelperText, setFindGameHelperText] = useState(
-    "Höre zu und tippe danach auf das richtige Fahrzeug.",
+    "Höre zu und tippe danach auf das richtige Bild.",
   );
   const [findGameActionLabel, setFindGameActionLabel] = useState("Los!");
   const [showParentSettings, setShowParentSettings] = useState(false);
@@ -145,6 +149,7 @@ export default function App() {
       vehicleSize,
       vehicleRowY,
       gap,
+      bookChooserWidth: Math.min(250, safeWidth - 96),
     };
   }, [height, width]);
 
@@ -166,6 +171,7 @@ export default function App() {
   const visibleSceneItems = isCompactPhone
     ? SCENE_ITEMS.filter((item) => item.id !== "station" && item.id !== "airport")
     : SCENE_ITEMS;
+  const previewBook = PICTURE_BOOKS[previewBookIndex] ?? PICTURE_BOOKS[0];
 
   useEffect(() => {
     void initializeSoundEffects();
@@ -357,7 +363,7 @@ export default function App() {
     }
 
     queueTapFeedback({
-      vehicleId: item.id,
+      itemId: item.id,
       speech: getTapSpeech(item),
       soundDelayMs: INTERACTION_TIMING.tap.soundDelayMs,
       speechDelayMs: INTERACTION_TIMING.tap.speechDelayMs,
@@ -540,7 +546,7 @@ export default function App() {
     setIsGameMode(true);
     void askNextQuestion(undefined, {
       openModal: true,
-      helperText: "Höre zu und tippe dann auf das passende Fahrzeug in unserem kleinen Bild.",
+      helperText: "Höre zu und tippe dann auf das passende Bild in unserem kleinen Buch.",
       actionLabel: "Starten",
     });
   }
@@ -548,7 +554,7 @@ export default function App() {
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
-    rotatePage((current) => createItemSet(current.map((item) => item.id)));
+    rotatePage((current) => createItemSetForBook(activeBookId, current.map((item) => item.id)));
     clearInteractionQueue();
     stopAllSoundEffects();
     void stopGermanSpeech();
@@ -557,12 +563,12 @@ export default function App() {
 
   function closeFindGame() {
     setIsFreePlayMode(true);
-    rotatePage((current) => createItemSet(current.map((item) => item.id)));
+    rotatePage((current) => createItemSetForBook(activeBookId, current.map((item) => item.id)));
     clearGameRound();
   }
 
-  function resetVehiclesToDefault() {
-    rotatePage((current) => createItemSet(current.map((item) => item.id)));
+  function resetItemsToDefault() {
+    rotatePage((current) => createItemSetForBook(activeBookId, current.map((item) => item.id)));
     setResetTrigger((current) => current + 1);
   }
 
@@ -573,8 +579,9 @@ export default function App() {
       helperText?: string;
       actionLabel?: string;
     },
+    bookId: BookId = activeBookId,
   ) {
-    const nextItems = createItemSet(visibleItems.map((item) => item.id));
+    const nextItems = createItemSetForBook(bookId, visibleItems.map((item) => item.id));
     const nextItem = pickTargetItem(nextItems, previousItemId);
     const nextPrompt = getGamePrompt(nextItem);
     rotatePage(() => nextItems);
@@ -594,7 +601,7 @@ export default function App() {
     actionLabel?: string;
   }) {
     setFindGameHelperText(
-      options?.helperText ?? "Höre zu und tippe danach auf das richtige Fahrzeug.",
+      options?.helperText ?? "Höre zu und tippe danach auf das richtige Bild.",
     );
     setFindGameActionLabel(options?.actionLabel ?? "Starten");
     setIsFindGameModalVisible(true);
@@ -628,6 +635,34 @@ export default function App() {
 
   function updateMusicVolume(volume: number) {
     setMusicVolume(volume);
+  }
+
+  function cycleBook(direction: "left" | "right") {
+    setPreviewBookIndex((current) => {
+      const delta = direction === "left" ? -1 : 1;
+      return (current + delta + PICTURE_BOOKS.length) % PICTURE_BOOKS.length;
+    });
+  }
+
+  function activatePreviewBook() {
+    const nextBook = previewBook;
+    setActiveBookId(nextBook.id);
+    rotatePage((current) => createItemSetForBook(nextBook.id, current.map((item) => item.id)));
+    setResetTrigger((current) => current + 1);
+
+    if (isGameMode) {
+      setTimeout(() => {
+        void askNextQuestion(undefined, {
+          openModal: false,
+          helperText: `Jetzt spielen wir mit ${nextBook.label.toLowerCase()}.`,
+          actionLabel: "Weiter",
+        }, nextBook.id);
+      }, 180);
+      return;
+    }
+
+    clearInteractionQueue();
+    void speakGerman(`${nextBook.label}. ${nextBook.description}`);
   }
 
   function rotatePage(nextItemsFactory: (current: ItemDefinition[]) => ItemDefinition[]) {
@@ -829,7 +864,7 @@ export default function App() {
                     </Pressable>
                     <Pressable
                       style={styles.shuffleButton}
-                      onPress={resetVehiclesToDefault}
+                      onPress={resetItemsToDefault}
                       disabled={isFindGameModalVisible}
                     >
                       <Text style={styles.shuffleButtonText}>Neue Seite</Text>
@@ -842,6 +877,56 @@ export default function App() {
                     <Text style={styles.modeButtonText}>Finde</Text>
                   </Pressable>
                 </View>
+              </View>
+
+              <View
+                style={[
+                  styles.bookChooserRow,
+                  isCompactPhone ? styles.bookChooserRowCompact : null,
+                ]}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => cycleBook("left")}
+                  style={styles.bookArrowButton}
+                >
+                  <Text style={styles.bookArrowText}>‹</Text>
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={activatePreviewBook}
+                  style={[
+                    styles.bookCoverCard,
+                    {
+                      width: layout.bookChooserWidth,
+                      backgroundColor: previewBook.color,
+                      borderColor: previewBook.accentColor,
+                    },
+                    activeBookId === previewBook.id ? styles.bookCoverCardActive : null,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.bookCoverSpine,
+                      { backgroundColor: previewBook.accentColor },
+                    ]}
+                  />
+                  <Text style={styles.bookEmoji}>{previewBook.emoji}</Text>
+                  <Text style={styles.bookLabel}>{previewBook.label}</Text>
+                  <Text style={styles.bookDescription}>{previewBook.description}</Text>
+                  <Text style={styles.bookHint}>
+                    {activeBookId === previewBook.id ? "Offenes Buch" : "Zum Öffnen tippen"}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => cycleBook("right")}
+                  style={styles.bookArrowButton}
+                >
+                  <Text style={styles.bookArrowText}>›</Text>
+                </Pressable>
               </View>
 
               {isGameMode && !isFindGameModalVisible ? (
@@ -1026,7 +1111,7 @@ export default function App() {
                 ]}
               >
                 {visibleItems.map((item, index) => (
-                  <VehicleCard
+                  <ItemCard
                     key={item.id}
                     item={item}
                     home={homes[item.id]}
@@ -1200,9 +1285,10 @@ function createItemTokenMap() {
   }, {});
 }
 
-function createItemSet(excludedIds: ItemId[] = []) {
-  const preferredPool = ITEMS.filter((item) => !excludedIds.includes(item.id));
-  const pool = preferredPool.length >= 3 ? preferredPool : ITEMS;
+function createItemSetForBook(bookId: BookId, excludedIds: ItemId[] = []) {
+  const eligibleItems = getItemsForBook(bookId);
+  const preferredPool = eligibleItems.filter((item) => !excludedIds.includes(item.id));
+  const pool = preferredPool.length >= 3 ? preferredPool : eligibleItems;
   return pickUniqueItems(pool, 3);
 }
 
@@ -1425,6 +1511,20 @@ const styles = StyleSheet.create({
   modeAreaCompact: {
     marginTop: 6,
   },
+  bookChooserRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    zIndex: 12,
+  },
+  bookChooserRowCompact: {
+    marginTop: 10,
+    gap: 8,
+    paddingHorizontal: 8,
+  },
   modeRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1443,6 +1543,65 @@ const styles = StyleSheet.create({
   },
   modeGroupCompact: {
     gap: 6,
+  },
+  bookArrowButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,250,244,0.96)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    ...createSurfaceShadow("#8a97a8", 0.1, 10, 5, 3),
+  },
+  bookArrowText: {
+    fontSize: 34,
+    fontWeight: "700",
+    color: "#6f6670",
+    marginTop: -4,
+  },
+  bookCoverCard: {
+    minHeight: 96,
+    borderRadius: 28,
+    borderWidth: 3,
+    paddingLeft: 26,
+    paddingRight: 18,
+    paddingVertical: 14,
+    justifyContent: "center",
+    overflow: "hidden",
+    ...createSurfaceShadow("#8393a4", 0.14, 12, 6, 4),
+  },
+  bookCoverCardActive: {
+    transform: [{ scale: 1.02 }],
+  },
+  bookCoverSpine: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 14,
+  },
+  bookEmoji: {
+    fontSize: 30,
+  },
+  bookLabel: {
+    marginTop: 4,
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#495b6b",
+  },
+  bookDescription: {
+    marginTop: 2,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#6f7580",
+  },
+  bookHint: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#7f5d4f",
   },
   modeButton: {
     minWidth: 108,

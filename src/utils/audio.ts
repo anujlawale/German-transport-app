@@ -23,10 +23,6 @@ export function playItemSound(itemId: ItemId): void {
   void playSoundEffect(ITEM_SOUND_EFFECT[itemId] ?? "bus");
 }
 
-export function playVehicleSound(vehicleId: ItemId): void {
-  playItemSound(vehicleId);
-}
-
 export function playSuccessSound(): void {
   void playSoundEffect("success");
 }

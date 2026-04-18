@@ -1,5 +1,5 @@
-import { VehicleId } from "../../types";
-import { playSuccessSound, playVehicleSound, speakGerman, stopGermanSpeech } from "./audio";
+import { ItemId } from "../../types";
+import { playItemSound, playSuccessSound, speakGerman, stopGermanSpeech } from "./audio";
 import { INTERACTION_TIMING } from "./interactionTiming";
 
 type TimeoutId = ReturnType<typeof setTimeout>;
@@ -17,7 +17,7 @@ let interactionToken = 0;
 let lastInteractionStartedAt = 0;
 
 export function queueTapFeedback(options: {
-  vehicleId: VehicleId;
+  itemId: ItemId;
   speech: string;
   soundDelayMs: number;
   speechDelayMs: number;
@@ -28,7 +28,7 @@ export function queueTapFeedback(options: {
     if (!isActiveToken(token)) {
       return;
     }
-    playVehicleSound(options.vehicleId);
+    playItemSound(options.itemId);
   }, options.soundDelayMs + delayOffsetMs);
 
   // Speech intentionally trails the sound effect a bit so toddlers first get an

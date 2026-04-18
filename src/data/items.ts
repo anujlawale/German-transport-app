@@ -1,9 +1,10 @@
 import {
+  BookId,
   ItemAnimationStyle,
   ItemCategory,
   ItemDefinition,
+  PictureBookDefinition,
   ItemSoundEffect,
-  ZoneId,
 } from "../../types";
 
 type ItemSeed = {
@@ -417,6 +418,41 @@ const ITEM_SEEDS: ItemSeed[] = [
 ];
 
 export const ITEMS: ItemDefinition[] = ITEM_SEEDS.map((item) => createItemDefinition(item));
+
+export const PICTURE_BOOKS: PictureBookDefinition[] = [
+  {
+    id: "transport",
+    label: "Fahrzeuge",
+    emoji: "🚌",
+    color: "#ffd8b5",
+    accentColor: "#ff8f5a",
+    description: "Bus, Zug und noch mehr",
+  },
+  {
+    id: "profession",
+    label: "Berufe",
+    emoji: "🧑‍🍳",
+    color: "#d7ebff",
+    accentColor: "#7aa8ff",
+    description: "Menschen bei der Arbeit",
+  },
+  {
+    id: "mixed",
+    label: "Alles",
+    emoji: "📚",
+    color: "#f4e2ff",
+    accentColor: "#c488ff",
+    description: "Bunt gemischt",
+  },
+];
+
+export function getItemsForBook(bookId: BookId) {
+  if (bookId === "mixed") {
+    return ITEMS;
+  }
+
+  return ITEMS.filter((item) => item.category === bookId);
+}
 
 function createItemDefinition(item: ItemSeed): ItemDefinition {
   const speechName = `${item.article} ${item.label}`;
