@@ -1,5 +1,5 @@
 import { Animated, Easing } from "react-native";
-import { VehicleDefinition } from "../../types";
+import { ItemDefinition } from "../../types";
 
 export type VehicleMotionValues = {
   bounce: Animated.Value;
@@ -24,10 +24,10 @@ export function createVehicleMotionValues(): VehicleMotionValues {
   };
 }
 
-export function runTapAnimation(vehicle: VehicleDefinition, motion: VehicleMotionValues) {
+export function runTapAnimation(item: ItemDefinition, motion: VehicleMotionValues) {
   stopMotion(motion);
 
-  if (vehicle.preferredZone === "road") {
+  if (item.animationStyle === "road") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 0.93),
@@ -44,7 +44,7 @@ export function runTapAnimation(vehicle: VehicleDefinition, motion: VehicleMotio
     return;
   }
 
-  if (vehicle.preferredZone === "sky") {
+  if (item.animationStyle === "sky") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -12, 140),
@@ -79,12 +79,12 @@ export function runTapAnimation(vehicle: VehicleDefinition, motion: VehicleMotio
 }
 
 export function runCelebrationAnimation(
-  vehicle: VehicleDefinition,
+  item: ItemDefinition,
   motion: VehicleMotionValues,
 ) {
   stopMotion(motion);
 
-  if (vehicle.preferredZone === "road") {
+  if (item.animationStyle === "road") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 1.14),
@@ -100,7 +100,7 @@ export function runCelebrationAnimation(
     return;
   }
 
-  if (vehicle.preferredZone === "sky") {
+  if (item.animationStyle === "sky") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -18, 180),

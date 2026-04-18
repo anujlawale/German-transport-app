@@ -1,6 +1,6 @@
-import { VehicleId } from "../../types";
+import { ItemId } from "../../types";
 import * as Speech from "expo-speech";
-import { VEHICLES } from "../data/vehicles";
+import { ITEMS } from "../data/items";
 import { playSoundEffect } from "./soundEffects";
 
 const GERMAN_SPEECH_OPTIONS: Speech.SpeechOptions = {
@@ -11,21 +11,20 @@ const GERMAN_SPEECH_OPTIONS: Speech.SpeechOptions = {
 
 let speechEnabled = true;
 
-const VEHICLE_SOUND_EFFECT: Record<VehicleId, "bus" | "plane" | "train"> = VEHICLES.reduce(
-  (map, vehicle) => {
-    map[vehicle.id] =
-      vehicle.preferredZone === "road"
-        ? "bus"
-        : vehicle.preferredZone === "sky"
-          ? "plane"
-          : "train";
+const ITEM_SOUND_EFFECT: Record<ItemId, "bus" | "plane" | "train"> = ITEMS.reduce(
+  (map, item) => {
+    map[item.id] = item.soundEffect;
     return map;
   },
-  {} as Record<VehicleId, "bus" | "plane" | "train">,
+  {} as Record<ItemId, "bus" | "plane" | "train">,
 );
 
-export function playVehicleSound(vehicleId: VehicleId): void {
-  void playSoundEffect(VEHICLE_SOUND_EFFECT[vehicleId] ?? "bus");
+export function playItemSound(itemId: ItemId): void {
+  void playSoundEffect(ITEM_SOUND_EFFECT[itemId] ?? "bus");
+}
+
+export function playVehicleSound(vehicleId: ItemId): void {
+  playItemSound(vehicleId);
 }
 
 export function playSuccessSound(): void {

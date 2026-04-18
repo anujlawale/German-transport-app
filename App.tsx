@@ -13,7 +13,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { FindGameModal } from "./src/components/FindGameModal";
 import { SceneWordButton } from "./src/components/SceneWordButton";
 import { VehicleCard } from "./src/components/VehicleCard";
-import { VEHICLES } from "./src/data/vehicles";
+import { ITEMS } from "./src/data/items";
 import { setSpeechEnabled, speakGerman, stopGermanSpeech } from "./src/utils/audio";
 import {
   clearInteractionQueue,
@@ -31,10 +31,10 @@ import {
   stopAllSoundEffects,
   stopBackgroundMusic,
 } from "./src/utils/soundEffects";
-import { DifficultyLevel, VehicleDefinition, VehicleId } from "./types";
+import { DifficultyLevel, ItemDefinition, ItemId } from "./types";
 
-type VehicleHomeMap = Record<VehicleId, { x: number; y: number }>;
-type VehicleTokenMap = Record<VehicleId, number>;
+type ItemHomeMap = Record<ItemId, { x: number; y: number }>;
+type ItemTokenMap = Record<ItemId, number>;
 
 const DIFFICULTY_DETAILS: Record<DifficultyLevel, string> = {
   easy: "Kurze Namen zum Mitsprechen.",
@@ -74,7 +74,7 @@ const SCENE_ITEMS = [
   },
 ] as const;
 
-const INITIAL_VISIBLE_VEHICLES = createVehicleSet();
+const INITIAL_VISIBLE_ITEMS = createItemSet();
 const PRAISE_MESSAGES = [
   "Ja, genau!",
   "Wunderbar!",
@@ -87,8 +87,7 @@ const MUSIC_VOLUME_STEPS = [0, 0.08, 0.14, 0.2, 0.28] as const;
 
 export default function App() {
   const { width, height } = useWindowDimensions();
-  const [visibleVehicles, setVisibleVehicles] =
-    useState<VehicleDefinition[]>(INITIAL_VISIBLE_VEHICLES);
+  const [visibleItems, setVisibleItems] = useState<ItemDefinition[]>(INITIAL_VISIBLE_ITEMS);
   const [successMessage, setSuccessMessage] = useState("");
   const [wrongMessage, setWrongMessage] = useState("");
   const [isFreePlayMode, setIsFreePlayMode] = useState(true);
@@ -105,15 +104,15 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("easy");
   const [resetTrigger, setResetTrigger] = useState(0);
   const [gamePrompt, setGamePrompt] = useState("Tippe auf Start");
-  const [targetVehicleId, setTargetVehicleId] = useState<VehicleId | null>(null);
+  const [targetItemId, setTargetItemId] = useState<ItemId | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
   const [isAirplaneHeroVisible, setIsAirplaneHeroVisible] = useState(false);
-  const [tapTokens, setTapTokens] = useState<VehicleTokenMap>(() => createVehicleTokenMap());
-  const [celebrationTokens, setCelebrationTokens] = useState<VehicleTokenMap>(() =>
-    createVehicleTokenMap(),
+  const [tapTokens, setTapTokens] = useState<ItemTokenMap>(() => createItemTokenMap());
+  const [celebrationTokens, setCelebrationTokens] = useState<ItemTokenMap>(() =>
+    createItemTokenMap(),
   );
-  const [wrongTapTokens, setWrongTapTokens] = useState<VehicleTokenMap>(() =>
-    createVehicleTokenMap(),
+  const [wrongTapTokens, setWrongTapTokens] = useState<ItemTokenMap>(() =>
+    createItemTokenMap(),
   );
   const sparkleScale = useRef(new Animated.Value(0)).current;
   const sparkleOpacity = useRef(new Animated.Value(0)).current;
@@ -149,20 +148,20 @@ export default function App() {
     };
   }, [height, width]);
 
-  const homes = useMemo<VehicleHomeMap>(() => {
+  const homes = useMemo<ItemHomeMap>(() => {
     const slots = [
       { x: 14, y: layout.vehicleRowY + 10 },
       { x: 14 + layout.vehicleSize + layout.gap, y: layout.vehicleRowY - 10 },
       { x: layout.safeWidth - layout.vehicleSize - 14, y: layout.vehicleRowY + 6 },
     ];
-    const nextHomes: VehicleHomeMap = {};
+    const nextHomes: ItemHomeMap = {};
 
-    visibleVehicles.forEach((vehicle, index) => {
-      nextHomes[vehicle.id] = slots[index];
+    visibleItems.forEach((item, index) => {
+      nextHomes[item.id] = slots[index];
     });
 
     return nextHomes;
-  }, [layout, visibleVehicles]);
+  }, [layout, visibleItems]);
   const isCompactPhone = width <= 430 || height <= 780;
   const visibleSceneItems = isCompactPhone
     ? SCENE_ITEMS.filter((item) => item.id !== "station" && item.id !== "airport")
@@ -345,45 +344,45 @@ export default function App() {
     };
   }, [birdDriftOne, birdDriftTwo, flowerBobLeft, flowerBobRight]);
 
-  function handleTap(vehicle: VehicleDefinition) {
+  function handleTap(item: ItemDefinition) {
     if (isFindGameModalVisible) {
       return;
     }
 
-    bumpVehicleToken(setTapTokens, vehicle.id);
+    bumpItemToken(setTapTokens, item.id);
 
     if (isGameMode) {
-      void handleGameTap(vehicle);
+      void handleGameTap(item);
       return;
     }
 
     queueTapFeedback({
-      vehicleId: vehicle.id,
-      speech: getTapSpeech(vehicle),
+      vehicleId: item.id,
+      speech: getTapSpeech(item),
       soundDelayMs: INTERACTION_TIMING.tap.soundDelayMs,
       speechDelayMs: INTERACTION_TIMING.tap.speechDelayMs,
     });
 
-    if (vehicle.id === "flugzeug") {
+    if (item.id === "flugzeug") {
       playAirplaneHeroMoment();
     }
   }
 
-  async function handleGameTap(vehicle: VehicleDefinition) {
-    if (vehicle.id === targetVehicleId) {
-      handleCorrectSelection(vehicle);
+  async function handleGameTap(item: ItemDefinition) {
+    if (item.id === targetItemId) {
+      handleCorrectSelection(item);
       return;
     }
 
-    handleIncorrectSelectionFeedback(vehicle);
+    handleIncorrectSelectionFeedback(item);
     queueIncorrectSelectionSpeech(
       "Probier ein anderes!",
       INTERACTION_TIMING.wrongSelection.speechDelayMs,
     );
   }
 
-  function handleCorrectSelection(vehicle: VehicleDefinition) {
-    handleCorrectSelectionFeedback(vehicle);
+  function handleCorrectSelection(item: ItemDefinition) {
+    handleCorrectSelectionFeedback(item);
 
     if (isGameMode) {
       if (nextRoundTimeoutRef.current) {
@@ -391,7 +390,7 @@ export default function App() {
       }
 
       nextRoundTimeoutRef.current = setTimeout(() => {
-        void askNextQuestion(vehicle.id, {
+        void askNextQuestion(item.id, {
           openModal: false,
           helperText: "Super! Höre die nächste Frage.",
           actionLabel: "Weiter",
@@ -400,9 +399,9 @@ export default function App() {
     }
   }
 
-  function handleCorrectSelectionFeedback(vehicle: VehicleDefinition) {
+  function handleCorrectSelectionFeedback(item: ItemDefinition) {
     const praise = pickPraiseMessage();
-    const celebrationAnnouncement = `${praise} ${vehicle.speechName}`;
+    const celebrationAnnouncement = `${praise} ${item.speechName}`;
 
     queueCorrectSelectionFeedback({
       speech: celebrationAnnouncement,
@@ -410,18 +409,18 @@ export default function App() {
       speechDelayMs: INTERACTION_TIMING.correctSelection.speechDelayMs,
       extraOneDelayMs: INTERACTION_TIMING.correctSelection.celebrationDelayMs,
       onExtraOne: () => {
-        bumpVehicleToken(setCelebrationTokens, vehicle.id);
+        bumpItemToken(setCelebrationTokens, item.id);
         playSparkle();
       },
       extraTwoDelayMs: INTERACTION_TIMING.completion.successDelayMs,
       onExtraTwo: () => {
-        setSuccessMessage(`${praise} ${vehicle.label}`);
+        setSuccessMessage(`${praise} ${item.label}`);
       },
     });
   }
 
-  function handleIncorrectSelectionFeedback(vehicle: VehicleDefinition) {
-    bumpVehicleToken(setWrongTapTokens, vehicle.id);
+  function handleIncorrectSelectionFeedback(item: ItemDefinition) {
+    bumpItemToken(setWrongTapTokens, item.id);
     setWrongMessage("Probier ein anderes!");
   }
 
@@ -436,12 +435,12 @@ export default function App() {
     }, INTERACTION_TIMING.tap.speechDelayMs);
   }
 
-  function getTapSpeech(vehicle: VehicleDefinition) {
+  function getTapSpeech(item: ItemDefinition) {
     if (difficulty === "easy") {
-      return vehicle.speechName;
+      return item.speechName;
     }
 
-    return `${vehicle.speechName}. ${vehicle.phrase}`;
+    return `${item.speechName}. ${item.phrase}`;
   }
 
   function clearGameRound() {
@@ -453,7 +452,7 @@ export default function App() {
     setIsGameMode(false);
     setIsFindGameModalVisible(false);
     setGamePrompt("Tippe auf Start");
-    setTargetVehicleId(null);
+    setTargetItemId(null);
   }
 
   function playSparkle() {
@@ -549,7 +548,7 @@ export default function App() {
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
-    rotatePage((current) => createVehicleSet(current.map((vehicle) => vehicle.id)));
+    rotatePage((current) => createItemSet(current.map((item) => item.id)));
     clearInteractionQueue();
     stopAllSoundEffects();
     void stopGermanSpeech();
@@ -558,29 +557,29 @@ export default function App() {
 
   function closeFindGame() {
     setIsFreePlayMode(true);
-    rotatePage((current) => createVehicleSet(current.map((vehicle) => vehicle.id)));
+    rotatePage((current) => createItemSet(current.map((item) => item.id)));
     clearGameRound();
   }
 
   function resetVehiclesToDefault() {
-    rotatePage((current) => createVehicleSet(current.map((vehicle) => vehicle.id)));
+    rotatePage((current) => createItemSet(current.map((item) => item.id)));
     setResetTrigger((current) => current + 1);
   }
 
   function askNextQuestion(
-    previousVehicleId?: VehicleId,
+    previousItemId?: ItemId,
     modalOptions?: {
       openModal?: boolean;
       helperText?: string;
       actionLabel?: string;
     },
   ) {
-    const nextVehicles = createVehicleSet(visibleVehicles.map((vehicle) => vehicle.id));
-    const nextVehicle = pickTargetVehicle(nextVehicles, previousVehicleId);
-    const nextPrompt = getGamePrompt(nextVehicle);
-    rotatePage(() => nextVehicles);
+    const nextItems = createItemSet(visibleItems.map((item) => item.id));
+    const nextItem = pickTargetItem(nextItems, previousItemId);
+    const nextPrompt = getGamePrompt(nextItem);
+    rotatePage(() => nextItems);
     setResetTrigger((current) => current + 1);
-    setTargetVehicleId(nextVehicle.id);
+    setTargetItemId(nextItem.id);
     setGamePrompt(nextPrompt);
     if (modalOptions?.openModal) {
       openFindGameModal({
@@ -610,13 +609,13 @@ export default function App() {
     setIsFindGameModalVisible(false);
   }
 
-  function getGamePrompt(vehicle: VehicleDefinition) {
-    if (difficulty !== "advanced" || !vehicle.advancedPrompts?.length) {
-      return vehicle.questionPrompt;
+  function getGamePrompt(item: ItemDefinition) {
+    if (difficulty !== "advanced" || !item.advancedPrompts?.length) {
+      return item.questionPrompt;
     }
 
-    const promptIndex = Math.floor(Math.random() * vehicle.advancedPrompts.length);
-    return vehicle.advancedPrompts[promptIndex];
+    const promptIndex = Math.floor(Math.random() * item.advancedPrompts.length);
+    return item.advancedPrompts[promptIndex];
   }
 
   function toggleSpeech() {
@@ -631,7 +630,7 @@ export default function App() {
     setMusicVolume(volume);
   }
 
-  function rotatePage(nextVehiclesFactory: (current: VehicleDefinition[]) => VehicleDefinition[]) {
+  function rotatePage(nextItemsFactory: (current: ItemDefinition[]) => ItemDefinition[]) {
     setIsPageTurning(true);
     pageTurnProgress.stopAnimation();
     pageTurnProgress.setValue(0);
@@ -656,7 +655,7 @@ export default function App() {
     });
 
     setTimeout(() => {
-      setVisibleVehicles((current) => nextVehiclesFactory(current));
+      setVisibleItems((current) => nextItemsFactory(current));
     }, 170);
   }
 
@@ -1026,17 +1025,17 @@ export default function App() {
                   },
                 ]}
               >
-                {visibleVehicles.map((vehicle, index) => (
+                {visibleItems.map((item, index) => (
                   <VehicleCard
-                    key={vehicle.id}
-                    vehicle={vehicle}
-                    home={homes[vehicle.id]}
+                    key={item.id}
+                    item={item}
+                    home={homes[item.id]}
                     cardSize={layout.vehicleSize}
                     slotIndex={index}
                     interactionEnabled={!isFindGameModalVisible}
-                    tapAnimationToken={tapTokens[vehicle.id] ?? 0}
-                    celebrationToken={celebrationTokens[vehicle.id] ?? 0}
-                    wrongTapToken={wrongTapTokens[vehicle.id] ?? 0}
+                    tapAnimationToken={tapTokens[item.id] ?? 0}
+                    celebrationToken={celebrationTokens[item.id] ?? 0}
+                    wrongTapToken={wrongTapTokens[item.id] ?? 0}
                     onTap={handleTap}
                   />
                 ))}
@@ -1184,32 +1183,32 @@ export default function App() {
   );
 }
 
-function bumpVehicleToken(
-  setter: React.Dispatch<React.SetStateAction<VehicleTokenMap>>,
-  vehicleId: VehicleId,
+function bumpItemToken(
+  setter: React.Dispatch<React.SetStateAction<ItemTokenMap>>,
+  itemId: ItemId,
 ) {
   setter((current) => ({
     ...current,
-    [vehicleId]: (current[vehicleId] ?? 0) + 1,
+    [itemId]: (current[itemId] ?? 0) + 1,
   }));
 }
 
-function createVehicleTokenMap() {
-  return VEHICLES.reduce<VehicleTokenMap>((map, vehicle) => {
-    map[vehicle.id] = 0;
+function createItemTokenMap() {
+  return ITEMS.reduce<ItemTokenMap>((map, item) => {
+    map[item.id] = 0;
     return map;
   }, {});
 }
 
-function createVehicleSet(excludedIds: VehicleId[] = []) {
-  const preferredPool = VEHICLES.filter((vehicle) => !excludedIds.includes(vehicle.id));
-  const pool = preferredPool.length >= 3 ? preferredPool : VEHICLES;
-  return pickUniqueVehicles(pool, 3);
+function createItemSet(excludedIds: ItemId[] = []) {
+  const preferredPool = ITEMS.filter((item) => !excludedIds.includes(item.id));
+  const pool = preferredPool.length >= 3 ? preferredPool : ITEMS;
+  return pickUniqueItems(pool, 3);
 }
 
-function pickTargetVehicle(vehicles: VehicleDefinition[], previousVehicleId?: VehicleId) {
-  const candidates = vehicles.filter((vehicle) => vehicle.id !== previousVehicleId);
-  const pool = candidates.length > 0 ? candidates : vehicles;
+function pickTargetItem(items: ItemDefinition[], previousItemId?: ItemId) {
+  const candidates = items.filter((item) => item.id !== previousItemId);
+  const pool = candidates.length > 0 ? candidates : items;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -1217,8 +1216,8 @@ function pickPraiseMessage() {
   return PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
 }
 
-function pickUniqueVehicles(vehicles: VehicleDefinition[], count: number) {
-  const shuffled = [...vehicles];
+function pickUniqueItems(items: ItemDefinition[], count: number) {
+  const shuffled = [...items];
 
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));

@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Point, VehicleDefinition } from "../../types";
+import { ItemDefinition, Point } from "../../types";
 import {
   createVehicleMotionValues,
   runCelebrationAnimation,
@@ -17,7 +17,7 @@ import {
 } from "../utils/vehicleAnimations";
 
 type VehicleCardProps = {
-  vehicle: VehicleDefinition;
+  item: ItemDefinition;
   home: Point;
   cardSize: number;
   slotIndex: number;
@@ -25,7 +25,7 @@ type VehicleCardProps = {
   tapAnimationToken: number;
   celebrationToken: number;
   wrongTapToken: number;
-  onTap: (vehicle: VehicleDefinition) => void;
+  onTap: (item: ItemDefinition) => void;
 };
 
 const IDLE_FLOAT_UP_DURATION_MS = 1200;
@@ -35,7 +35,7 @@ const IDLE_WIGGLE_STEP_DURATION_MS = 1400;
 const CARD_LAYER_STYLE = { zIndex: 120, elevation: 18 } as const;
 
 export function VehicleCard({
-  vehicle,
+  item,
   home,
   cardSize,
   slotIndex,
@@ -64,15 +64,15 @@ export function VehicleCard({
 
   useEffect(() => {
     if (tapAnimationToken > 0) {
-      runTapAnimation(vehicle, motion);
+      runTapAnimation(item, motion);
     }
-  }, [motion, tapAnimationToken, vehicle]);
+  }, [item, motion, tapAnimationToken]);
 
   useEffect(() => {
     if (celebrationToken > 0) {
-      runCelebrationAnimation(vehicle, motion);
+      runCelebrationAnimation(item, motion);
     }
-  }, [celebrationToken, motion, vehicle]);
+  }, [celebrationToken, item, motion]);
 
   useEffect(() => {
     if (wrongTapToken > 0) {
@@ -105,7 +105,7 @@ export function VehicleCard({
   return (
     <Pressable
       disabled={!interactionEnabled}
-      onPress={() => onTap(vehicle)}
+      onPress={() => onTap(item)}
       style={[
         styles.pressableWrap,
         {
@@ -124,7 +124,7 @@ export function VehicleCard({
           {
             width: cardSize,
             height: cardSize,
-            backgroundColor: vehicle.color,
+            backgroundColor: item.color,
             transform: combinedTransform,
           },
         ]}
@@ -133,9 +133,9 @@ export function VehicleCard({
           <View style={styles.eye} />
           <View style={styles.eye} />
         </View>
-        <Text style={styles.emoji}>{vehicle.emoji}</Text>
+        <Text style={styles.emoji}>{item.emoji}</Text>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{vehicle.label}</Text>
+          <Text style={styles.badgeText}>{item.label}</Text>
         </View>
         <View style={styles.shadowDot} />
       </Animated.View>

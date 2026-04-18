@@ -1,11 +1,14 @@
-export type VehicleId = string;
+export type ItemId = string;
 
 export type ZoneId = "sky" | "road" | "track";
+export type ItemCategory = "transport" | "profession";
+export type ItemAnimationStyle = "road" | "sky" | "track" | "character";
+export type ItemSoundEffect = "bus" | "plane" | "train";
 
 export type DifficultyLevel = "easy" | "medium" | "advanced";
 
-export type VehicleDefinition = {
-  id: VehicleId;
+export type ItemDefinition = {
+  id: ItemId;
   emoji: string;
   label: string;
   speechName: string;
@@ -13,10 +16,15 @@ export type VehicleDefinition = {
   advancedPrompts?: string[];
   phrase: string;
   color: string;
-  preferredZone: ZoneId;
+  category: ItemCategory;
+  animationStyle: ItemAnimationStyle;
+  soundEffect: ItemSoundEffect;
 };
 
 export type Point = {
   x: number;
   y: number;
 };
+
+export type VehicleId = ItemId;
+export type VehicleDefinition = ItemDefinition;
