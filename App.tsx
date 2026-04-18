@@ -31,7 +31,14 @@ import {
   stopAllSoundEffects,
   stopBackgroundMusic,
 } from "./src/utils/soundEffects";
-import { BookId, DifficultyLevel, ItemDefinition, ItemId, PictureBookDefinition } from "./types";
+import {
+  BookId,
+  DifficultyLevel,
+  ItemDefinition,
+  ItemId,
+  PictureBookDefinition,
+  WowMomentDefinition,
+} from "./types";
 
 type ItemHomeMap = Record<ItemId, { x: number; y: number }>;
 type ItemTokenMap = Record<ItemId, number>;
@@ -110,8 +117,8 @@ export default function App() {
   const [gamePrompt, setGamePrompt] = useState("Tippe auf Start");
   const [targetItemId, setTargetItemId] = useState<ItemId | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
-  const [isAirplaneHeroVisible, setIsAirplaneHeroVisible] = useState(false);
-  const [professionHeroItem, setProfessionHeroItem] = useState<ItemDefinition | null>(null);
+  const [activeWowItem, setActiveWowItem] = useState<ItemDefinition | null>(null);
+  const [activeWowMoment, setActiveWowMoment] = useState<WowMomentDefinition | null>(null);
   const [bookTurnDirection, setBookTurnDirection] = useState<1 | -1>(1);
   const [tapTokens, setTapTokens] = useState<ItemTokenMap>(() => createItemTokenMap());
   const [celebrationTokens, setCelebrationTokens] = useState<ItemTokenMap>(() =>
@@ -125,10 +132,8 @@ export default function App() {
   const bookCoverTurn = useRef(new Animated.Value(0)).current;
   const bookCoverLift = useRef(new Animated.Value(0)).current;
   const bookCoverSheen = useRef(new Animated.Value(0)).current;
-  const airplaneHeroProgress = useRef(new Animated.Value(0)).current;
-  const airplaneHeroOpacity = useRef(new Animated.Value(0)).current;
-  const professionHeroProgress = useRef(new Animated.Value(0)).current;
-  const professionHeroOpacity = useRef(new Animated.Value(0)).current;
+  const wowProgress = useRef(new Animated.Value(0)).current;
+  const wowOpacity = useRef(new Animated.Value(0)).current;
   const birdDriftOne = useRef(new Animated.Value(0)).current;
   const birdDriftTwo = useRef(new Animated.Value(0)).current;
   const flowerBobLeft = useRef(new Animated.Value(0)).current;
@@ -138,8 +143,7 @@ export default function App() {
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrongMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalAutoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const airplaneHeroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const professionHeroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const layout = useMemo(() => {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
@@ -196,11 +200,8 @@ export default function App() {
       if (modalAutoCloseTimeoutRef.current) {
         clearTimeout(modalAutoCloseTimeoutRef.current);
       }
-      if (airplaneHeroTimeoutRef.current) {
-        clearTimeout(airplaneHeroTimeoutRef.current);
-      }
-      if (professionHeroTimeoutRef.current) {
-        clearTimeout(professionHeroTimeoutRef.current);
+      if (wowTimeoutRef.current) {
+        clearTimeout(wowTimeoutRef.current);
       }
       if (wrongMessageTimeoutRef.current) {
         clearTimeout(wrongMessageTimeoutRef.current);
@@ -382,13 +383,9 @@ export default function App() {
       speechDelayMs: INTERACTION_TIMING.tap.speechDelayMs,
     });
 
-    if (item.id === "flugzeug") {
-      playAirplaneHeroMoment();
-      return;
-    }
-
-    if (item.category === "profession") {
-      playProfessionHeroMoment(item);
+    const wowMoment = item.wowMoment ?? getDefaultWowMomentForItem(item);
+    if (wowMoment) {
+      playWowMoment(item, wowMoment);
     }
   }
 
@@ -513,96 +510,61 @@ export default function App() {
     ]).start();
   }
 
-  function playAirplaneHeroMoment() {
-    if (airplaneHeroTimeoutRef.current) {
-      clearTimeout(airplaneHeroTimeoutRef.current);
-    }
-
-    setIsAirplaneHeroVisible(true);
-    airplaneHeroProgress.stopAnimation();
-    airplaneHeroOpacity.stopAnimation();
-    airplaneHeroProgress.setValue(0);
-    airplaneHeroOpacity.setValue(0);
-
-    Animated.parallel([
-      Animated.sequence([
-        Animated.timing(airplaneHeroOpacity, {
-          toValue: 1,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-        Animated.delay(1700),
-        Animated.timing(airplaneHeroOpacity, {
-          toValue: 0,
-          duration: 280,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.timing(airplaneHeroProgress, {
-        toValue: 1,
-        duration: 2200,
-        useNativeDriver: true,
-      }),
-    ]).start(({ finished }) => {
-      if (finished) {
-        setIsAirplaneHeroVisible(false);
-        airplaneHeroProgress.setValue(0);
-        airplaneHeroOpacity.setValue(0);
-      }
-    });
-
-    airplaneHeroTimeoutRef.current = setTimeout(() => {
-      setIsAirplaneHeroVisible(false);
-      airplaneHeroProgress.setValue(0);
-      airplaneHeroOpacity.setValue(0);
-      airplaneHeroTimeoutRef.current = null;
-    }, 2500);
+  function getDefaultWowMomentForItem(item: ItemDefinition) {
+    const itemBook = PICTURE_BOOKS.find((book) => book.id === item.category);
+    return itemBook?.defaultWowMoment ?? null;
   }
 
-  function playProfessionHeroMoment(item: ItemDefinition) {
-    if (professionHeroTimeoutRef.current) {
-      clearTimeout(professionHeroTimeoutRef.current);
+  function playWowMoment(item: ItemDefinition, wowMoment: WowMomentDefinition) {
+    if (wowTimeoutRef.current) {
+      clearTimeout(wowTimeoutRef.current);
     }
 
-    setProfessionHeroItem(item);
-    professionHeroProgress.stopAnimation();
-    professionHeroOpacity.stopAnimation();
-    professionHeroProgress.setValue(0);
-    professionHeroOpacity.setValue(0);
+    const totalDuration = wowMoment.durationMs ?? 2200;
+    const fadeOutDelay = Math.max(900, totalDuration - 800);
+
+    setActiveWowItem(item);
+    setActiveWowMoment(wowMoment);
+    wowProgress.stopAnimation();
+    wowOpacity.stopAnimation();
+    wowProgress.setValue(0);
+    wowOpacity.setValue(0);
 
     Animated.parallel([
       Animated.sequence([
-        Animated.timing(professionHeroOpacity, {
+        Animated.timing(wowOpacity, {
           toValue: 1,
-          duration: 160,
+          duration: wowMoment.kind === "flight" ? 180 : 160,
           useNativeDriver: true,
         }),
-        Animated.delay(1450),
-        Animated.timing(professionHeroOpacity, {
+        Animated.delay(fadeOutDelay),
+        Animated.timing(wowOpacity, {
           toValue: 0,
           duration: 260,
           useNativeDriver: true,
         }),
       ]),
-      Animated.timing(professionHeroProgress, {
+      Animated.timing(wowProgress, {
         toValue: 1,
-        duration: 1900,
+        duration: totalDuration - 300,
         useNativeDriver: true,
       }),
     ]).start(({ finished }) => {
       if (finished) {
-        setProfessionHeroItem(null);
-        professionHeroProgress.setValue(0);
-        professionHeroOpacity.setValue(0);
+        setActiveWowItem(null);
+        setActiveWowMoment(null);
+        wowProgress.setValue(0);
+        wowOpacity.setValue(0);
       }
     });
 
-    professionHeroTimeoutRef.current = setTimeout(() => {
-      setProfessionHeroItem(null);
-      professionHeroProgress.setValue(0);
-      professionHeroOpacity.setValue(0);
-      professionHeroTimeoutRef.current = null;
-    }, 2100);
+    wowTimeoutRef.current = setTimeout(() => {
+      setActiveWowItem(null);
+      setActiveWowMoment(null);
+      wowProgress.setValue(0);
+      wowOpacity.setValue(0);
+      wowTimeoutRef.current = null;
+    }, totalDuration);
   }
 
   function startFindGame() {
@@ -1186,27 +1148,29 @@ export default function App() {
                 <Text style={styles.sparkleText}>✨</Text>
               </Animated.View>
 
-              {isAirplaneHeroVisible ? (
+              {activeWowItem && activeWowMoment?.kind === "flight" ? (
                 <Animated.View
                   pointerEvents="none"
                   style={[
-                    styles.airplaneHeroOverlay,
+                    styles.wowFlightOverlay,
                     {
-                      opacity: airplaneHeroOpacity,
+                      opacity: wowOpacity,
+                      backgroundColor:
+                        activeWowMoment.overlayColor ?? "rgba(188, 229, 248, 0.35)",
                     },
                   ]}
                 >
                   <Animated.View
                     style={[
-                      styles.airplaneHeroCloudOne,
+                      styles.wowFlightCloudOne,
                       {
-                        opacity: airplaneHeroOpacity.interpolate({
+                        opacity: wowOpacity.interpolate({
                           inputRange: [0, 0.2, 1],
                           outputRange: [0, 0.6, 0],
                         }),
                         transform: [
                           {
-                            translateX: airplaneHeroProgress.interpolate({
+                            translateX: wowProgress.interpolate({
                               inputRange: [0, 1],
                               outputRange: [-50, 30],
                             }),
@@ -1217,15 +1181,15 @@ export default function App() {
                   />
                   <Animated.View
                     style={[
-                      styles.airplaneHeroCloudTwo,
+                      styles.wowFlightCloudTwo,
                       {
-                        opacity: airplaneHeroOpacity.interpolate({
+                        opacity: wowOpacity.interpolate({
                           inputRange: [0, 0.25, 1],
                           outputRange: [0, 0.5, 0],
                         }),
                         transform: [
                           {
-                            translateX: airplaneHeroProgress.interpolate({
+                            translateX: wowProgress.interpolate({
                               inputRange: [0, 1],
                               outputRange: [-20, 40],
                             }),
@@ -1236,21 +1200,21 @@ export default function App() {
                   />
                   <Animated.Text
                     style={[
-                      styles.airplaneHeroTrail,
+                      styles.wowFlightTrail,
                       {
-                        opacity: airplaneHeroOpacity.interpolate({
+                        opacity: wowOpacity.interpolate({
                           inputRange: [0, 0.15, 1],
                           outputRange: [0, 0.9, 0],
                         }),
                         transform: [
                           {
-                            translateX: airplaneHeroProgress.interpolate({
+                            translateX: wowProgress.interpolate({
                               inputRange: [0, 1],
                               outputRange: [-layout.safeWidth * 0.34, layout.safeWidth * 0.2],
                             }),
                           },
                           {
-                            translateY: airplaneHeroProgress.interpolate({
+                            translateY: wowProgress.interpolate({
                               inputRange: [0, 0.5, 1],
                               outputRange: [14, -8, -14],
                             }),
@@ -1259,33 +1223,33 @@ export default function App() {
                       },
                     ]}
                   >
-                    ✨  ☁️  ✨
+                    {activeWowMoment.trailText ?? "✨  ☁️  ✨"}
                   </Animated.Text>
                   <Animated.Text
                     style={[
-                      styles.airplaneHeroEmoji,
+                      styles.wowFlightEmoji,
                       {
                         transform: [
                           {
-                            translateX: airplaneHeroProgress.interpolate({
+                            translateX: wowProgress.interpolate({
                               inputRange: [0, 1],
                               outputRange: [-layout.safeWidth * 0.7, layout.safeWidth * 0.72],
                             }),
                           },
                           {
-                            translateY: airplaneHeroProgress.interpolate({
+                            translateY: wowProgress.interpolate({
                               inputRange: [0, 0.45, 1],
                               outputRange: [60, -10, -34],
                             }),
                           },
                           {
-                            rotate: airplaneHeroProgress.interpolate({
+                            rotate: wowProgress.interpolate({
                               inputRange: [0, 0.45, 1],
                               outputRange: ["-6deg", "4deg", "10deg"],
                             }),
                           },
                           {
-                            scale: airplaneHeroProgress.interpolate({
+                            scale: wowProgress.interpolate({
                               inputRange: [0, 0.3, 1],
                               outputRange: [0.82, 1.08, 1],
                             }),
@@ -1294,35 +1258,37 @@ export default function App() {
                       },
                     ]}
                   >
-                    ✈️
+                    {activeWowMoment.emoji ?? activeWowItem.emoji}
                   </Animated.Text>
                 </Animated.View>
               ) : null}
 
-              {professionHeroItem ? (
+              {activeWowItem && activeWowMoment?.kind === "badge" ? (
                 <Animated.View
                   pointerEvents="none"
                   style={[
-                    styles.professionHeroOverlay,
+                    styles.wowBadgeOverlay,
                     {
-                      opacity: professionHeroOpacity,
+                      opacity: wowOpacity,
+                      backgroundColor:
+                        activeWowMoment.overlayColor ?? "rgba(245, 247, 255, 0.26)",
                     },
                   ]}
                 >
                   <Animated.View
                     style={[
-                      styles.professionHeroBadge,
+                      styles.wowBadgeBubble,
                       {
-                        backgroundColor: `${professionHeroItem.color}dd`,
+                        backgroundColor: `${activeWowItem.color}dd`,
                         transform: [
                           {
-                            scale: professionHeroProgress.interpolate({
+                            scale: wowProgress.interpolate({
                               inputRange: [0, 0.35, 1],
                               outputRange: [0.75, 1.08, 1],
                             }),
                           },
                           {
-                            translateY: professionHeroProgress.interpolate({
+                            translateY: wowProgress.interpolate({
                               inputRange: [0, 0.5, 1],
                               outputRange: [26, -10, -2],
                             }),
@@ -1333,15 +1299,15 @@ export default function App() {
                   >
                     <Animated.Text
                       style={[
-                        styles.professionHeroSparkle,
+                        styles.wowBadgeSparkle,
                         {
-                          opacity: professionHeroOpacity.interpolate({
+                          opacity: wowOpacity.interpolate({
                             inputRange: [0, 0.15, 1],
                             outputRange: [0, 0.95, 0],
                           }),
                           transform: [
                             {
-                              translateY: professionHeroProgress.interpolate({
+                              translateY: wowProgress.interpolate({
                                 inputRange: [0, 1],
                                 outputRange: [10, -18],
                               }),
@@ -1350,11 +1316,11 @@ export default function App() {
                         },
                       ]}
                     >
-                      ✨ ✨
+                      {activeWowMoment.sparkleText ?? "✨ ✨"}
                     </Animated.Text>
-                    <Text style={styles.professionHeroLabel}>{professionHeroItem.label}</Text>
-                    <Text style={styles.professionHeroEmoji}>{professionHeroItem.emoji}</Text>
-                    <Text style={styles.professionHeroHint}>Hallo!</Text>
+                    <Text style={styles.wowBadgeLabel}>{activeWowItem.label}</Text>
+                    <Text style={styles.wowBadgeEmoji}>{activeWowItem.emoji}</Text>
+                    <Text style={styles.wowBadgeHint}>{activeWowMoment.hintText ?? "Hallo!"}</Text>
                   </Animated.View>
                 </Animated.View>
               ) : null}
@@ -2026,14 +1992,14 @@ const styles = StyleSheet.create({
   sparkleText: {
     fontSize: 34,
   },
-  airplaneHeroOverlay: {
+  wowFlightOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 54,
     elevation: 54,
     backgroundColor: "rgba(188, 229, 248, 0.35)",
     overflow: "hidden",
   },
-  airplaneHeroEmoji: {
+  wowFlightEmoji: {
     position: "absolute",
     top: "42%",
     left: "18%",
@@ -2042,13 +2008,13 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 18,
   },
-  airplaneHeroTrail: {
+  wowFlightTrail: {
     position: "absolute",
     top: "49%",
     left: "30%",
     fontSize: 30,
   },
-  airplaneHeroCloudOne: {
+  wowFlightCloudOne: {
     position: "absolute",
     top: "26%",
     left: "12%",
@@ -2057,7 +2023,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.76)",
   },
-  airplaneHeroCloudTwo: {
+  wowFlightCloudTwo: {
     position: "absolute",
     top: "60%",
     right: "12%",
@@ -2066,7 +2032,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.64)",
   },
-  professionHeroOverlay: {
+  wowBadgeOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 53,
     elevation: 53,
@@ -2074,7 +2040,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(245, 247, 255, 0.26)",
   },
-  professionHeroBadge: {
+  wowBadgeBubble: {
     minWidth: 220,
     minHeight: 220,
     borderRadius: 999,
@@ -2083,21 +2049,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     ...createSurfaceShadow("#8ea2bf", 0.16, 14, 7, 4),
   },
-  professionHeroSparkle: {
+  wowBadgeSparkle: {
     position: "absolute",
     top: 30,
     fontSize: 26,
   },
-  professionHeroLabel: {
+  wowBadgeLabel: {
     fontSize: 20,
     fontWeight: "900",
     color: "#495b6b",
   },
-  professionHeroEmoji: {
+  wowBadgeEmoji: {
     marginTop: 8,
     fontSize: 82,
   },
-  professionHeroHint: {
+  wowBadgeHint: {
     marginTop: 6,
     fontSize: 20,
     fontWeight: "800",

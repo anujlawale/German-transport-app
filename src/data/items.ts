@@ -6,6 +6,7 @@ import {
   ItemDefinition,
   PictureBookDefinition,
   ItemSoundEffect,
+  WowMomentDefinition,
 } from "../../types";
 
 type ItemSeed = {
@@ -19,6 +20,7 @@ type ItemSeed = {
   animationStyle: ItemAnimationStyle;
   soundEffect: ItemSoundEffect;
   advancedPrompts?: string[];
+  wowMoment?: WowMomentDefinition;
 };
 
 const ITEM_SEEDS: ItemSeed[] = [
@@ -28,7 +30,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Bus",
     article: "Der",
     phrase: "fährt durch die Stadt",
-    color: "#ff8f5a",
+    color: "#d64d47",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -38,8 +40,8 @@ const ITEM_SEEDS: ItemSeed[] = [
     emoji: "🚗",
     label: "Auto",
     article: "Das",
-    phrase: "fährt schnell",
-    color: "#ff738a",
+    phrase: "saust flink los",
+    color: "#e35c53",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -72,7 +74,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Feuerwehrauto",
     article: "Das",
     phrase: "hilft ganz schnell",
-    color: "#ff6d5f",
+    color: "#df594f",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -83,7 +85,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Fahrrad",
     article: "Das",
     phrase: "rollt leise",
-    color: "#4fd1c5",
+    color: "#c74b4a",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -116,7 +118,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Roller",
     article: "Der",
     phrase: "saust flink los",
-    color: "#61d4c3",
+    color: "#f3efef",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -127,7 +129,29 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Motorrad",
     article: "Das",
     phrase: "brummt laut",
-    color: "#ff7aa2",
+    color: "#ec8c3f",
+    category: "transport",
+    animationStyle: "road",
+    soundEffect: "bus",
+  },
+  {
+    id: "van",
+    emoji: "🚐",
+    label: "Van",
+    article: "Der",
+    phrase: "bringt viele Sachen",
+    color: "#d7bc43",
+    category: "transport",
+    animationStyle: "road",
+    soundEffect: "bus",
+  },
+  {
+    id: "krankenwagen",
+    emoji: "🚑",
+    label: "Krankenwagen",
+    article: "Der",
+    phrase: "hilft ganz schnell",
+    color: "#f4f5f7",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -149,7 +173,18 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Kipplaster",
     article: "Der",
     phrase: "trägt viele Steine",
-    color: "#ffa552",
+    color: "#d1b541",
+    category: "transport",
+    animationStyle: "road",
+    soundEffect: "bus",
+  },
+  {
+    id: "lastwagen",
+    emoji: "🚛",
+    label: "Lastwagen",
+    article: "Der",
+    phrase: "bringt große Kisten",
+    color: "#efe3a6",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -171,7 +206,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Traktor",
     article: "Der",
     phrase: "arbeitet auf dem Feld",
-    color: "#7ed957",
+    color: "#ccb13c",
     category: "transport",
     animationStyle: "road",
     soundEffect: "bus",
@@ -182,10 +217,33 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Flugzeug",
     article: "Das",
     phrase: "fliegt im Himmel",
-    color: "#90e0ef",
+    color: "#dbeaf8",
     category: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
+    wowMoment: {
+      kind: "flight",
+      overlayColor: "rgba(188, 229, 248, 0.35)",
+      trailText: "✨  ☁️  ✨",
+      durationMs: 2500,
+    },
+  },
+  {
+    id: "luftschiff",
+    emoji: "🎈",
+    label: "Luftschiff",
+    article: "Das",
+    phrase: "schwebt ganz ruhig",
+    color: "#f2a552",
+    category: "transport",
+    animationStyle: "sky",
+    soundEffect: "plane",
+    wowMoment: {
+      kind: "flight",
+      overlayColor: "rgba(255, 214, 164, 0.28)",
+      trailText: "☁️  ✨",
+      durationMs: 2300,
+    },
   },
   {
     id: "hubschrauber",
@@ -193,10 +251,16 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Hubschrauber",
     article: "Der",
     phrase: "summt in der Luft",
-    color: "#91f2b3",
+    color: "#e76a67",
     category: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
+    wowMoment: {
+      kind: "flight",
+      overlayColor: "rgba(255, 211, 214, 0.28)",
+      trailText: "✨  ✨",
+      durationMs: 2200,
+    },
   },
   {
     id: "rakete",
@@ -208,17 +272,46 @@ const ITEM_SEEDS: ItemSeed[] = [
     category: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
+    wowMoment: {
+      kind: "flight",
+      overlayColor: "rgba(205, 190, 255, 0.3)",
+      trailText: "✨  🚀  ✨",
+      durationMs: 2400,
+    },
+  },
+  {
+    id: "space-shuttle",
+    emoji: "🛰️",
+    label: "Space-Shuttle",
+    article: "Das",
+    phrase: "fliegt weit im All",
+    color: "#d8e2ec",
+    category: "transport",
+    animationStyle: "sky",
+    soundEffect: "plane",
+    wowMoment: {
+      kind: "flight",
+      overlayColor: "rgba(216, 226, 236, 0.28)",
+      trailText: "⭐  ✨  ⭐",
+      durationMs: 2400,
+    },
   },
   {
     id: "heissluftballon",
     emoji: "🎈",
-    label: "Ballon",
+    label: "Heißluftballon",
     article: "Der",
     phrase: "schwebt langsam",
-    color: "#ffa6c9",
+    color: "#cf8bf6",
     category: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
+    wowMoment: {
+      kind: "flight",
+      overlayColor: "rgba(239, 199, 255, 0.28)",
+      trailText: "☁️  ✨",
+      durationMs: 2200,
+    },
   },
   {
     id: "ufo",
@@ -248,7 +341,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     label: "Zug",
     article: "Der",
     phrase: "fährt auf der Schiene",
-    color: "#ff6b6b",
+    color: "#8ca8c5",
     category: "transport",
     animationStyle: "track",
     soundEffect: "train",
@@ -307,6 +400,50 @@ const ITEM_SEEDS: ItemSeed[] = [
     category: "transport",
     animationStyle: "track",
     soundEffect: "train",
+  },
+  {
+    id: "boot",
+    emoji: "🚤",
+    label: "Boot",
+    article: "Das",
+    phrase: "fährt über das Wasser",
+    color: "#67b2f2",
+    category: "transport",
+    animationStyle: "water",
+    soundEffect: "bus",
+  },
+  {
+    id: "schiff",
+    emoji: "🚢",
+    label: "Schiff",
+    article: "Das",
+    phrase: "fährt über das Meer",
+    color: "#9e7b5d",
+    category: "transport",
+    animationStyle: "water",
+    soundEffect: "bus",
+  },
+  {
+    id: "hovercraft",
+    emoji: "🛥️",
+    label: "Hovercraft",
+    article: "Das",
+    phrase: "gleitet über das Wasser",
+    color: "#9ddff4",
+    category: "transport",
+    animationStyle: "water",
+    soundEffect: "bus",
+  },
+  {
+    id: "u-boot",
+    emoji: "⚓",
+    label: "U-Boot",
+    article: "Das",
+    phrase: "taucht tief hinunter",
+    color: "#7a8188",
+    category: "transport",
+    animationStyle: "water",
+    soundEffect: "bus",
   },
   {
     id: "arzt",
@@ -535,6 +672,13 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     accentColor: "#7aa8ff",
     description: "Menschen bei der Arbeit",
     sceneAccents: professionSceneAccents,
+    defaultWowMoment: {
+      kind: "badge",
+      overlayColor: "rgba(245, 247, 255, 0.26)",
+      sparkleText: "✨ ✨",
+      hintText: "Hallo!",
+      durationMs: 2100,
+    },
   },
   {
     id: "mixed",
@@ -575,6 +719,7 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
     category: item.category,
     animationStyle: item.animationStyle,
     soundEffect: item.soundEffect,
+    wowMoment: item.wowMoment,
   };
 }
 
@@ -589,6 +734,10 @@ function getCategoryPrompt(category: ItemCategory, animationStyle: ItemAnimation
 
   if (animationStyle === "track") {
     return "Welches fährt auf der Schiene?";
+  }
+
+  if (animationStyle === "water") {
+    return "Welches fährt im Wasser?";
   }
 
   return "Welches rollt auf der Straße?";

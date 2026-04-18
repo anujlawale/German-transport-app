@@ -64,6 +64,26 @@ export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) 
     return;
   }
 
+  if (item.animationStyle === "water") {
+    Animated.parallel([
+      Animated.sequence([
+        timingMotion(motion.liftY, -8, 130),
+        timingMotion(motion.liftY, -2, 110),
+        timingMotion(motion.liftY, 0, 150),
+      ]),
+      Animated.sequence([
+        timingMotion(motion.tilt, -0.8, 120),
+        timingMotion(motion.tilt, 0.8, 140),
+        timingMotion(motion.tilt, 0, 130),
+      ]),
+      Animated.sequence([
+        springScale(motion.bounce, 1.04),
+        springScale(motion.bounce, 1),
+      ]),
+    ]).start();
+    return;
+  }
+
   Animated.parallel([
     Animated.sequence([
       timingMotion(motion.slideX, 10, 90),
@@ -111,6 +131,26 @@ export function runCelebrationAnimation(item: ItemDefinition, motion: ItemMotion
       ]),
       Animated.sequence([
         springScale(motion.bounce, 1.1),
+        springScale(motion.bounce, 1),
+      ]),
+    ]).start();
+    return;
+  }
+
+  if (item.animationStyle === "water") {
+    Animated.parallel([
+      Animated.sequence([
+        timingMotion(motion.liftY, -12, 160),
+        timingMotion(motion.liftY, -4, 120),
+        timingMotion(motion.liftY, 0, 170),
+      ]),
+      Animated.sequence([
+        timingMotion(motion.tilt, -1.2, 130),
+        timingMotion(motion.tilt, 1.1, 140),
+        timingMotion(motion.tilt, 0, 160),
+      ]),
+      Animated.sequence([
+        springScale(motion.bounce, 1.08),
         springScale(motion.bounce, 1),
       ]),
     ]).start();
