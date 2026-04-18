@@ -1,4 +1,4 @@
-export type VehicleId = "bus" | "plane" | "train";
+export type VehicleId = string;
 
 export type ZoneId = "sky" | "road" | "track";
 

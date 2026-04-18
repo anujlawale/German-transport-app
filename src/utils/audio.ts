@@ -1,5 +1,6 @@
 import { VehicleId } from "../../types";
 import * as Speech from "expo-speech";
+import { VEHICLES } from "../data/vehicles";
 import { playSoundEffect } from "./soundEffects";
 
 const GERMAN_SPEECH_OPTIONS: Speech.SpeechOptions = {
@@ -10,8 +11,21 @@ const GERMAN_SPEECH_OPTIONS: Speech.SpeechOptions = {
 
 let speechEnabled = true;
 
+const VEHICLE_SOUND_EFFECT: Record<VehicleId, "bus" | "plane" | "train"> = VEHICLES.reduce(
+  (map, vehicle) => {
+    map[vehicle.id] =
+      vehicle.preferredZone === "road"
+        ? "bus"
+        : vehicle.preferredZone === "sky"
+          ? "plane"
+          : "train";
+    return map;
+  },
+  {} as Record<VehicleId, "bus" | "plane" | "train">,
+);
+
 export function playVehicleSound(vehicleId: VehicleId): void {
-  void playSoundEffect(vehicleId);
+  void playSoundEffect(VEHICLE_SOUND_EFFECT[vehicleId] ?? "bus");
 }
 
 export function playSuccessSound(): void {

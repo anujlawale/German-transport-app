@@ -31,7 +31,7 @@ export function FindGameModal({
         <View style={styles.card}>
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <Text style={styles.title}>Find Game</Text>
+              <Text style={styles.title}>Kleine Suchpause</Text>
             </View>
             <Pressable style={styles.closeButton} onPress={onClose}>
               <Text style={styles.closeButtonText}>Schließen</Text>
@@ -82,7 +82,7 @@ function hexToRgb(hex: string) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(12, 29, 45, 0.6)",
+    backgroundColor: "rgba(58, 74, 90, 0.42)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
@@ -91,14 +91,14 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    maxWidth: 392,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,252,247,0.99)",
+    maxWidth: 360,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,250,244,0.99)",
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.96)",
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 30,
+    paddingHorizontal: 22,
+    paddingTop: 20,
+    paddingBottom: 24,
     ...createSurfaceShadow("#17324b", 0.16, 18, 10, 8),
   },
   headerRow: {
@@ -113,58 +113,58 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   title: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: "900",
-    color: "#1d425c",
+    color: "#6a6370",
     flexShrink: 1,
   },
   closeButton: {
-    minWidth: 120,
-    minHeight: 48,
+    minWidth: 92,
+    minHeight: 40,
     borderRadius: 999,
-    backgroundColor: "#dff2ff",
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    backgroundColor: "#f5e8d8",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   closeButtonText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "800",
-    color: "#215170",
+    color: "#7b6559",
   },
   promptText: {
-    marginTop: 30,
+    marginTop: 20,
     textAlign: "center",
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: "900",
-    color: "#ff7d62",
+    color: "#73687c",
   },
   helperText: {
-    marginTop: 18,
+    marginTop: 12,
     textAlign: "center",
-    fontSize: 19,
-    lineHeight: 26,
+    fontSize: 16,
+    lineHeight: 22,
     fontWeight: "700",
-    color: "#547084",
+    color: "#7a7f86",
   },
   actionButton: {
     alignSelf: "center",
-    marginTop: 34,
-    minWidth: 184,
-    minHeight: 56,
+    marginTop: 22,
+    minWidth: 150,
+    minHeight: 48,
     borderRadius: 999,
-    backgroundColor: "#ff966f",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    backgroundColor: "#f2d1b3",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
     ...createSurfaceShadow("#cf7a60", 0.14, 8, 4, 3),
   },
   actionButtonText: {
-    fontSize: 21,
+    fontSize: 18,
     fontWeight: "900",
-    color: "#ffffff",
+    color: "#725848",
   },
 });

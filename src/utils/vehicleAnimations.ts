@@ -1,5 +1,5 @@
 import { Animated, Easing } from "react-native";
-import { VehicleId } from "../../types";
+import { VehicleDefinition } from "../../types";
 
 export type VehicleMotionValues = {
   bounce: Animated.Value;
@@ -7,6 +7,13 @@ export type VehicleMotionValues = {
   liftY: Animated.Value;
   tilt: Animated.Value;
 };
+
+const MOTION_EASING = Easing.out(Easing.ease);
+const SPRING_CONFIG = {
+  useNativeDriver: false,
+  speed: 18,
+  bounciness: 8,
+} as const;
 
 export function createVehicleMotionValues(): VehicleMotionValues {
   return {
@@ -17,10 +24,10 @@ export function createVehicleMotionValues(): VehicleMotionValues {
   };
 }
 
-export function runTapAnimation(vehicleId: VehicleId, motion: VehicleMotionValues) {
+export function runTapAnimation(vehicle: VehicleDefinition, motion: VehicleMotionValues) {
   stopMotion(motion);
 
-  if (vehicleId === "bus") {
+  if (vehicle.preferredZone === "road") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 0.93),
@@ -28,26 +35,26 @@ export function runTapAnimation(vehicleId: VehicleId, motion: VehicleMotionValue
         springScale(motion.bounce, 1),
       ]),
       Animated.sequence([
-        timingX(motion.slideX, -7, 70),
-        timingX(motion.slideX, 8, 90),
-        timingX(motion.slideX, -4, 70),
-        timingX(motion.slideX, 0, 80),
+        timingMotion(motion.slideX, -7, 70),
+        timingMotion(motion.slideX, 8, 90),
+        timingMotion(motion.slideX, -4, 70),
+        timingMotion(motion.slideX, 0, 80),
       ]),
     ]).start();
     return;
   }
 
-  if (vehicleId === "plane") {
+  if (vehicle.preferredZone === "sky") {
     Animated.parallel([
       Animated.sequence([
-        timingLift(motion.liftY, -12, 140),
-        timingLift(motion.liftY, -6, 120),
-        timingLift(motion.liftY, 0, 160),
+        timingMotion(motion.liftY, -12, 140),
+        timingMotion(motion.liftY, -6, 120),
+        timingMotion(motion.liftY, 0, 160),
       ]),
       Animated.sequence([
-        timingTilt(motion.tilt, -1, 120),
-        timingTilt(motion.tilt, 0.7, 140),
-        timingTilt(motion.tilt, 0, 140),
+        timingMotion(motion.tilt, -1, 120),
+        timingMotion(motion.tilt, 0.7, 140),
+        timingMotion(motion.tilt, 0, 140),
       ]),
       Animated.sequence([
         springScale(motion.bounce, 1.05),
@@ -59,9 +66,9 @@ export function runTapAnimation(vehicleId: VehicleId, motion: VehicleMotionValue
 
   Animated.parallel([
     Animated.sequence([
-      timingX(motion.slideX, 10, 90),
-      timingX(motion.slideX, -5, 90),
-      timingX(motion.slideX, 0, 100),
+      timingMotion(motion.slideX, 10, 90),
+      timingMotion(motion.slideX, -5, 90),
+      timingMotion(motion.slideX, 0, 100),
     ]),
     Animated.sequence([
       springScale(motion.bounce, 1.06),
@@ -72,38 +79,38 @@ export function runTapAnimation(vehicleId: VehicleId, motion: VehicleMotionValue
 }
 
 export function runCelebrationAnimation(
-  vehicleId: VehicleId,
+  vehicle: VehicleDefinition,
   motion: VehicleMotionValues,
 ) {
   stopMotion(motion);
 
-  if (vehicleId === "bus") {
+  if (vehicle.preferredZone === "road") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 1.14),
         springScale(motion.bounce, 1),
       ]),
       Animated.sequence([
-        timingX(motion.slideX, 12, 120),
-        timingX(motion.slideX, -6, 100),
-        timingX(motion.slideX, 8, 110),
-        timingX(motion.slideX, 0, 120),
+        timingMotion(motion.slideX, 12, 120),
+        timingMotion(motion.slideX, -6, 100),
+        timingMotion(motion.slideX, 8, 110),
+        timingMotion(motion.slideX, 0, 120),
       ]),
     ]).start();
     return;
   }
 
-  if (vehicleId === "plane") {
+  if (vehicle.preferredZone === "sky") {
     Animated.parallel([
       Animated.sequence([
-        timingLift(motion.liftY, -18, 180),
-        timingLift(motion.liftY, -8, 140),
-        timingLift(motion.liftY, 0, 180),
+        timingMotion(motion.liftY, -18, 180),
+        timingMotion(motion.liftY, -8, 140),
+        timingMotion(motion.liftY, 0, 180),
       ]),
       Animated.sequence([
-        timingTilt(motion.tilt, -1.4, 140),
-        timingTilt(motion.tilt, 0.8, 140),
-        timingTilt(motion.tilt, 0, 160),
+        timingMotion(motion.tilt, -1.4, 140),
+        timingMotion(motion.tilt, 0.8, 140),
+        timingMotion(motion.tilt, 0, 160),
       ]),
       Animated.sequence([
         springScale(motion.bounce, 1.1),
@@ -115,10 +122,10 @@ export function runCelebrationAnimation(
 
   Animated.parallel([
     Animated.sequence([
-      timingX(motion.slideX, 12, 100),
-      timingX(motion.slideX, 2, 80),
-      timingX(motion.slideX, 14, 100),
-      timingX(motion.slideX, 0, 120),
+      timingMotion(motion.slideX, 12, 100),
+      timingMotion(motion.slideX, 2, 80),
+      timingMotion(motion.slideX, 14, 100),
+      timingMotion(motion.slideX, 0, 120),
     ]),
     Animated.sequence([
       springScale(motion.bounce, 1.12),
@@ -127,15 +134,15 @@ export function runCelebrationAnimation(
   ]).start();
 }
 
-export function runIncorrectDropAnimation(motion: VehicleMotionValues) {
+export function runIncorrectTapAnimation(motion: VehicleMotionValues) {
   stopMotion(motion);
 
   Animated.parallel([
     Animated.sequence([
-      timingX(motion.slideX, -6, 60),
-      timingX(motion.slideX, 6, 70),
-      timingX(motion.slideX, -4, 60),
-      timingX(motion.slideX, 0, 80),
+      timingMotion(motion.slideX, -6, 60),
+      timingMotion(motion.slideX, 6, 70),
+      timingMotion(motion.slideX, -4, 60),
+      timingMotion(motion.slideX, 0, 80),
     ]),
     Animated.sequence([
       springScale(motion.bounce, 1.03),
@@ -158,35 +165,15 @@ function stopMotion(motion: VehicleMotionValues) {
 function springScale(value: Animated.Value, toValue: number) {
   return Animated.spring(value, {
     toValue,
-    useNativeDriver: false,
-    speed: 18,
-    bounciness: 8,
+    ...SPRING_CONFIG,
   });
 }
 
-function timingX(value: Animated.Value, toValue: number, duration: number) {
+function timingMotion(value: Animated.Value, toValue: number, duration: number) {
   return Animated.timing(value, {
     toValue,
     duration,
-    easing: Easing.out(Easing.ease),
-    useNativeDriver: false,
-  });
-}
-
-function timingLift(value: Animated.Value, toValue: number, duration: number) {
-  return Animated.timing(value, {
-    toValue,
-    duration,
-    easing: Easing.out(Easing.ease),
-    useNativeDriver: false,
-  });
-}
-
-function timingTilt(value: Animated.Value, toValue: number, duration: number) {
-  return Animated.timing(value, {
-    toValue,
-    duration,
-    easing: Easing.out(Easing.ease),
+    easing: MOTION_EASING,
     useNativeDriver: false,
   });
 }

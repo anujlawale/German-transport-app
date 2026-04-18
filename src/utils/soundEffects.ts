@@ -9,32 +9,32 @@ type SoundConfig = {
 
 const SOUND_CONFIG: Record<SoundEffectId, SoundConfig> = {
   bus: {
-    // Replace with: require("../../assets/sounds/bus-horn.mp3")
     asset: null,
     placeholderPath: "assets/sounds/bus-horn.mp3",
   },
   plane: {
-    // Replace with: require("../../assets/sounds/plane-whoosh.mp3")
     asset: null,
     placeholderPath: "assets/sounds/plane-whoosh.mp3",
   },
   train: {
-    // Replace with: require("../../assets/sounds/train-horn.mp3")
     asset: null,
     placeholderPath: "assets/sounds/train-horn.mp3",
   },
   success: {
-    // Replace with: require("../../assets/sounds/success-chime.mp3")
     asset: null,
     placeholderPath: "assets/sounds/success-chime.mp3",
   },
 };
+
+const BACKGROUND_MUSIC_ASSET: number | null = require("../../assets/sounds/background-music.mp3");
 
 const players = new Map<SoundEffectId, ReturnType<typeof createAudioPlayer>>();
 const missingSoundWarnings = new Set<SoundEffectId>();
 let activeSoundId: SoundEffectId | null = null;
 let isAudioConfigured = false;
 let soundEnabled = true;
+let backgroundMusicPlayer: ReturnType<typeof createAudioPlayer> | null = null;
+let backgroundMusicVolume = 0.18;
 
 export async function initializeSoundEffects(): Promise<void> {
   if (isAudioConfigured) {
@@ -78,6 +78,7 @@ export function setSoundEnabled(enabled: boolean): void {
 
   if (!enabled) {
     stopAllSoundEffects();
+    stopBackgroundMusic();
   }
 }
 
@@ -90,12 +91,46 @@ export function stopAllSoundEffects(): void {
 
 export function releaseSoundEffects(): void {
   stopAllSoundEffects();
+  stopBackgroundMusic();
 
   for (const player of players.values()) {
     player.release();
   }
 
   players.clear();
+}
+
+export async function startBackgroundMusic(): Promise<void> {
+  if (!soundEnabled || !BACKGROUND_MUSIC_ASSET) {
+    return;
+  }
+
+  await initializeSoundEffects();
+
+  if (!backgroundMusicPlayer) {
+    backgroundMusicPlayer = createAudioPlayer(BACKGROUND_MUSIC_ASSET);
+    backgroundMusicPlayer.loop = true;
+  }
+
+  backgroundMusicPlayer.volume = backgroundMusicVolume;
+  backgroundMusicPlayer.play();
+}
+
+export function stopBackgroundMusic(): void {
+  if (!backgroundMusicPlayer) {
+    return;
+  }
+
+  backgroundMusicPlayer.pause();
+  backgroundMusicPlayer.seekTo(0);
+}
+
+export function setBackgroundMusicVolume(volume: number): void {
+  backgroundMusicVolume = Math.max(0, Math.min(1, volume));
+
+  if (backgroundMusicPlayer) {
+    backgroundMusicPlayer.volume = backgroundMusicVolume;
+  }
 }
 
 function getOrCreatePlayer(soundId: SoundEffectId, asset: number) {
@@ -127,5 +162,6 @@ function warnMissingSoundOnce(soundId: SoundEffectId, placeholderPath: string) {
   }
 
   missingSoundWarnings.add(soundId);
-  console.log(`[mock-sfx] Missing ${soundId} sound. Add file at ${placeholderPath}`);
+  void soundId;
+  void placeholderPath;
 }

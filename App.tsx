@@ -10,46 +10,39 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { DropZone } from "./src/components/DropZone";
 import { FindGameModal } from "./src/components/FindGameModal";
 import { SceneWordButton } from "./src/components/SceneWordButton";
 import { VehicleCard } from "./src/components/VehicleCard";
-import { VEHICLES } from "./src/data/vehicles";
+import { VEHICLES, VEHICLES_BY_ZONE } from "./src/data/vehicles";
 import { setSpeechEnabled, speakGerman, stopGermanSpeech } from "./src/utils/audio";
 import {
   clearInteractionQueue,
-  queueCorrectDropFeedback,
-  queueIncorrectDropSpeech,
+  queueCorrectSelectionFeedback,
+  queueIncorrectSelectionSpeech,
   queueTapFeedback,
 } from "./src/utils/interactionCoordinator";
 import { INTERACTION_TIMING } from "./src/utils/interactionTiming";
 import {
   initializeSoundEffects,
   releaseSoundEffects,
+  setBackgroundMusicVolume,
   setSoundEnabled,
+  startBackgroundMusic,
   stopAllSoundEffects,
+  stopBackgroundMusic,
 } from "./src/utils/soundEffects";
-import { DifficultyLevel, VehicleDefinition, VehicleId, ZoneId, ZoneLayout } from "./types";
+import { DifficultyLevel, VehicleDefinition, VehicleId, ZoneId } from "./types";
 
 type VehicleHomeMap = Record<VehicleId, { x: number; y: number }>;
 type VehicleTokenMap = Record<VehicleId, number>;
 
-const EMPTY_TOKENS: VehicleTokenMap = {
-  bus: 0,
-  plane: 0,
-  train: 0,
-};
-
-const MODE_HINTS = {
-  freePlay: "Tippe alles an und lerne deutsche Wörter.",
-  game: "Finde das richtige Fahrzeug.",
-} as const;
-
 const DIFFICULTY_DETAILS: Record<DifficultyLevel, string> = {
-  easy: "Only names.",
-  medium: "Names and simple phrases.",
-  advanced: "Find Game uses mixed prompts.",
+  easy: "Kurze Namen zum Mitsprechen.",
+  medium: "Namen und einfache Sätze.",
+  advanced: "Gemischte Fragen im Suchspiel.",
 };
+
+const VISIBLE_ZONE_ORDER: ZoneId[] = ["road", "sky", "track"];
 
 const SCENE_ITEMS = [
   { id: "cloud-left", label: "Wolke", phrase: "Die Wolke", style: "cloudOne" as const },
@@ -64,109 +57,91 @@ const SCENE_ITEMS = [
   },
 ] as const;
 
+const INITIAL_VISIBLE_VEHICLES = createVehicleSet();
+const PRAISE_MESSAGES = [
+  "Ja, genau!",
+  "Wunderbar!",
+  "Ganz toll!",
+  "Geschafft!",
+  "Wie schön!",
+] as const;
+const QUESTION_MODAL_AUTO_CLOSE_MS = 2600;
+const MUSIC_VOLUME_STEPS = [0, 0.08, 0.14, 0.2, 0.28] as const;
+
 export default function App() {
   const { width, height } = useWindowDimensions();
+  const [visibleVehicles, setVisibleVehicles] =
+    useState<VehicleDefinition[]>(INITIAL_VISIBLE_VEHICLES);
   const [successMessage, setSuccessMessage] = useState("");
-  const [highlightedZoneId, setHighlightedZoneId] = useState<ZoneId | null>(null);
-  const [zoneBurstId, setZoneBurstId] = useState<ZoneId | null>(null);
+  const [wrongMessage, setWrongMessage] = useState("");
   const [isFreePlayMode, setIsFreePlayMode] = useState(true);
   const [isGameMode, setIsGameMode] = useState(false);
   const [isFindGameModalVisible, setIsFindGameModalVisible] = useState(false);
   const [findGameHelperText, setFindGameHelperText] = useState(
     "Höre zu und tippe danach auf das richtige Fahrzeug.",
   );
-  const [findGameActionLabel, setFindGameActionLabel] = useState("Los geht's");
+  const [findGameActionLabel, setFindGameActionLabel] = useState("Los!");
   const [showParentSettings, setShowParentSettings] = useState(false);
   const [speechOn, setSpeechOnState] = useState(true);
   const [soundsOn, setSoundsOnState] = useState(true);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>("medium");
+  const [musicVolume, setMusicVolume] = useState<number>(0.14);
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>("easy");
   const [resetTrigger, setResetTrigger] = useState(0);
-  const [gamePrompt, setGamePrompt] = useState("Drücke Start");
-  const [gameFeedback, setGameFeedback] = useState("");
+  const [gamePrompt, setGamePrompt] = useState("Tippe auf Start");
   const [targetVehicleId, setTargetVehicleId] = useState<VehicleId | null>(null);
-  const [tapTokens, setTapTokens] = useState<VehicleTokenMap>(EMPTY_TOKENS);
-  const [celebrationTokens, setCelebrationTokens] = useState<VehicleTokenMap>(EMPTY_TOKENS);
-  const [incorrectDropTokens, setIncorrectDropTokens] = useState<VehicleTokenMap>(EMPTY_TOKENS);
+  const [isPageTurning, setIsPageTurning] = useState(false);
+  const [tapTokens, setTapTokens] = useState<VehicleTokenMap>(() => createVehicleTokenMap());
+  const [celebrationTokens, setCelebrationTokens] = useState<VehicleTokenMap>(() =>
+    createVehicleTokenMap(),
+  );
+  const [wrongTapTokens, setWrongTapTokens] = useState<VehicleTokenMap>(() =>
+    createVehicleTokenMap(),
+  );
   const sparkleScale = useRef(new Animated.Value(0)).current;
   const sparkleOpacity = useRef(new Animated.Value(0)).current;
-  const zoneBurstScale = useRef(new Animated.Value(0.7)).current;
-  const zoneBurstOpacity = useRef(new Animated.Value(0)).current;
+  const birdDriftOne = useRef(new Animated.Value(0)).current;
+  const birdDriftTwo = useRef(new Animated.Value(0)).current;
+  const flowerBobLeft = useRef(new Animated.Value(0)).current;
+  const flowerBobRight = useRef(new Animated.Value(0)).current;
+  const pageTurnProgress = useRef(new Animated.Value(0)).current;
   const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrongMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modalAutoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const layout = useMemo(() => {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
-    const vehicleSize = 124;
-    const playAreaTop = Math.max(272, Math.min(320, safeHeight * 0.34));
-    const skyHeight = Math.max(118, Math.min(156, safeHeight * 0.18));
-    const roadHeight = Math.max(82, Math.min(104, safeHeight * 0.14));
-    const trackHeight = Math.max(70, Math.min(84, safeHeight * 0.11));
-    const skyY = playAreaTop;
-    const vehicleRowY = skyY + skyHeight + 20;
-    const roadY = Math.min(
-      Math.max(vehicleRowY + vehicleSize + 20, safeHeight * 0.62),
-      safeHeight - trackHeight - roadHeight - 94,
+    const desiredGap = Math.max(8, Math.min(18, Math.floor(safeWidth * 0.03)));
+    const vehicleSize = Math.min(
+      164,
+      Math.max(108, Math.floor((safeWidth - 28 - desiredGap * 2) / 3)),
     );
-    const trackY = Math.min(
-      Math.max(roadY + roadHeight + 22, safeHeight * 0.79),
-      safeHeight - trackHeight - 42,
-    );
-    const gap = Math.max(16, (safeWidth - 48 - vehicleSize * 3) / 2);
+    const vehicleRowY = Math.max(290, Math.min(360, safeHeight * 0.46));
+    const gap = Math.max(6, Math.floor((safeWidth - 28 - vehicleSize * 3) / 2));
 
     return {
       safeWidth,
       safeHeight,
       vehicleSize,
-      skyY,
-      skyHeight,
       vehicleRowY,
-      roadY,
-      roadHeight,
-      trackY,
-      trackHeight,
       gap,
     };
   }, [height, width]);
 
-  const zones = useMemo<Record<ZoneId, ZoneLayout>>(() => {
-    return {
-      sky: {
-        id: "sky",
-        title: "Himmel",
-        x: 16,
-        y: layout.skyY,
-        width: layout.safeWidth - 32,
-        height: layout.skyHeight,
-        color: "#cbefff",
-      },
-      road: {
-        id: "road",
-        title: "Straße",
-        x: 16,
-        y: layout.roadY,
-        width: layout.safeWidth - 32,
-        height: layout.roadHeight,
-        color: "#f8d88a",
-      },
-      track: {
-        id: "track",
-        title: "Schiene",
-        x: 16,
-        y: layout.trackY,
-        width: layout.safeWidth - 32,
-        height: layout.trackHeight,
-        color: "#ffc4bf",
-      },
-    };
-  }, [layout]);
-
   const homes = useMemo<VehicleHomeMap>(() => {
-    return {
-      bus: { x: 16, y: layout.vehicleRowY },
-      plane: { x: 16 + layout.vehicleSize + layout.gap, y: layout.vehicleRowY - 4 },
-      train: { x: layout.safeWidth - layout.vehicleSize - 16, y: layout.vehicleRowY },
-    };
-  }, [layout]);
+    const slots = [
+      { x: 14, y: layout.vehicleRowY + 10 },
+      { x: 14 + layout.vehicleSize + layout.gap, y: layout.vehicleRowY - 10 },
+      { x: layout.safeWidth - layout.vehicleSize - 14, y: layout.vehicleRowY + 6 },
+    ];
+    const nextHomes: VehicleHomeMap = {};
+
+    visibleVehicles.forEach((vehicle, index) => {
+      nextHomes[vehicle.id] = slots[index];
+    });
+
+    return nextHomes;
+  }, [layout, visibleVehicles]);
 
   useEffect(() => {
     void initializeSoundEffects();
@@ -178,8 +153,15 @@ export default function App() {
       if (successTimeoutRef.current) {
         clearTimeout(successTimeoutRef.current);
       }
+      if (modalAutoCloseTimeoutRef.current) {
+        clearTimeout(modalAutoCloseTimeoutRef.current);
+      }
+      if (wrongMessageTimeoutRef.current) {
+        clearTimeout(wrongMessageTimeoutRef.current);
+      }
       clearInteractionQueue();
       stopAllSoundEffects();
+      stopBackgroundMusic();
       releaseSoundEffects();
       void stopGermanSpeech();
     };
@@ -191,7 +173,18 @@ export default function App() {
 
   useEffect(() => {
     setSoundEnabled(soundsOn);
+
+    if (soundsOn) {
+      void startBackgroundMusic();
+      return;
+    }
+
+    stopBackgroundMusic();
   }, [soundsOn]);
+
+  useEffect(() => {
+    setBackgroundMusicVolume(musicVolume);
+  }, [musicVolume]);
 
   useEffect(() => {
     if (!successMessage) {
@@ -210,6 +203,22 @@ export default function App() {
   }, [successMessage]);
 
   useEffect(() => {
+    if (!wrongMessage) {
+      return;
+    }
+
+    wrongMessageTimeoutRef.current = setTimeout(() => {
+      setWrongMessage("");
+    }, 1300);
+
+    return () => {
+      if (wrongMessageTimeoutRef.current) {
+        clearTimeout(wrongMessageTimeoutRef.current);
+      }
+    };
+  }, [wrongMessage]);
+
+  useEffect(() => {
     if (!isGameMode || !isFindGameModalVisible || !gamePrompt) {
       return;
     }
@@ -217,6 +226,96 @@ export default function App() {
     clearInteractionQueue();
     void speakGerman(gamePrompt);
   }, [gamePrompt, isFindGameModalVisible, isGameMode]);
+
+  useEffect(() => {
+    if (!isFindGameModalVisible) {
+      if (modalAutoCloseTimeoutRef.current) {
+        clearTimeout(modalAutoCloseTimeoutRef.current);
+      }
+      return;
+    }
+
+    modalAutoCloseTimeoutRef.current = setTimeout(() => {
+      setIsFindGameModalVisible(false);
+    }, QUESTION_MODAL_AUTO_CLOSE_MS);
+
+    return () => {
+      if (modalAutoCloseTimeoutRef.current) {
+        clearTimeout(modalAutoCloseTimeoutRef.current);
+      }
+    };
+  }, [findGameActionLabel, gamePrompt, isFindGameModalVisible]);
+
+  useEffect(() => {
+    const birdOneLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(birdDriftOne, {
+          toValue: 1,
+          duration: 3200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(birdDriftOne, {
+          toValue: 0,
+          duration: 3200,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    const birdTwoLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(birdDriftTwo, {
+          toValue: 1,
+          duration: 3800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(birdDriftTwo, {
+          toValue: 0,
+          duration: 3800,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    const flowerLeftLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(flowerBobLeft, {
+          toValue: 1,
+          duration: 2200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flowerBobLeft, {
+          toValue: 0,
+          duration: 2200,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    const flowerRightLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(flowerBobRight, {
+          toValue: 1,
+          duration: 2600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flowerBobRight, {
+          toValue: 0,
+          duration: 2600,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    birdOneLoop.start();
+    birdTwoLoop.start();
+    flowerLeftLoop.start();
+    flowerRightLoop.start();
+
+    return () => {
+      birdOneLoop.stop();
+      birdTwoLoop.stop();
+      flowerLeftLoop.stop();
+      flowerRightLoop.stop();
+    };
+  }, [birdDriftOne, birdDriftTwo, flowerBobLeft, flowerBobRight]);
 
   function handleTap(vehicle: VehicleDefinition) {
     if (isFindGameModalVisible) {
@@ -240,8 +339,25 @@ export default function App() {
 
   async function handleGameTap(vehicle: VehicleDefinition) {
     if (vehicle.id === targetVehicleId) {
-      handleCorrectDrop(vehicle);
+      handleCorrectSelection(vehicle);
+      return;
+    }
 
+    handleIncorrectSelectionFeedback(vehicle);
+    queueIncorrectSelectionSpeech(
+      "Probier ein anderes!",
+      INTERACTION_TIMING.wrongSelection.speechDelayMs,
+    );
+    openFindGameModal({
+      helperText: "Schau nochmal. Wir suchen ein anderes Fahrzeug.",
+      actionLabel: "Nochmal hören",
+    });
+  }
+
+  function handleCorrectSelection(vehicle: VehicleDefinition) {
+    handleCorrectSelectionFeedback(vehicle);
+
+    if (isGameMode) {
       if (nextRoundTimeoutRef.current) {
         clearTimeout(nextRoundTimeoutRef.current);
       }
@@ -253,59 +369,32 @@ export default function App() {
           actionLabel: "Weiter",
         });
       }, INTERACTION_TIMING.game.nextPromptDelayMs);
-      return;
     }
-
-    setGameFeedback("Nochmal");
-    queueIncorrectDropSpeech("Nochmal", INTERACTION_TIMING.wrongDrop.speechDelayMs);
-    openFindGameModal({
-      helperText: "Versuch es nochmal und tippe auf das richtige Fahrzeug.",
-      actionLabel: "Nochmal hören",
-    });
   }
 
-  function handleCorrectDrop(vehicle: VehicleDefinition) {
-    setHighlightedZoneId(vehicle.preferredZone);
-    setGameFeedback((current) => (isGameMode ? "Super!" : current));
+  function handleCorrectSelectionFeedback(vehicle: VehicleDefinition) {
+    const praise = pickPraiseMessage();
+    const celebrationAnnouncement = `${praise} ${vehicle.speechName}`;
 
-    queueCorrectDropFeedback({
-      speech: vehicle.speechName,
-      soundDelayMs: INTERACTION_TIMING.correctDrop.soundDelayMs,
-      speechDelayMs: INTERACTION_TIMING.correctDrop.speechDelayMs,
-      extraOneDelayMs: INTERACTION_TIMING.correctDrop.celebrationDelayMs,
+    queueCorrectSelectionFeedback({
+      speech: celebrationAnnouncement,
+      soundDelayMs: INTERACTION_TIMING.correctSelection.soundDelayMs,
+      speechDelayMs: INTERACTION_TIMING.correctSelection.speechDelayMs,
+      extraOneDelayMs: INTERACTION_TIMING.correctSelection.celebrationDelayMs,
       onExtraOne: () => {
         bumpVehicleToken(setCelebrationTokens, vehicle.id);
         playSparkle();
-        playZoneBurst(vehicle.preferredZone);
       },
       extraTwoDelayMs: INTERACTION_TIMING.completion.successDelayMs,
       onExtraTwo: () => {
-        setSuccessMessage("Super!");
-      },
-      extraThreeDelayMs: INTERACTION_TIMING.completion.speechDelayMs,
-      onExtraThree: () => {
-        void speakGerman(getCompletionSpeech(vehicle));
+        setSuccessMessage(`${praise} ${vehicle.label}`);
       },
     });
   }
 
-  function handleIncorrectDrop(vehicle: VehicleDefinition) {
-    bumpVehicleToken(setIncorrectDropTokens, vehicle.id);
-    queueIncorrectDropSpeech("Nochmal", INTERACTION_TIMING.wrongDrop.speechDelayMs);
-  }
-
-  function handleDragUpdate(
-    vehicle: VehicleDefinition,
-    update: { isDragging: boolean; isNearPreferredZone: boolean },
-  ) {
-    if (!update.isDragging) {
-      setHighlightedZoneId((current) =>
-        current === vehicle.preferredZone ? null : current,
-      );
-      return;
-    }
-
-    setHighlightedZoneId(update.isNearPreferredZone ? vehicle.preferredZone : null);
+  function handleIncorrectSelectionFeedback(vehicle: VehicleDefinition) {
+    bumpVehicleToken(setWrongTapTokens, vehicle.id);
+    setWrongMessage("Probier ein anderes!");
   }
 
   function handleSceneWordTap(label: string, phrase?: string) {
@@ -327,18 +416,6 @@ export default function App() {
     return `${vehicle.speechName}. ${vehicle.phrase}`;
   }
 
-  function getCompletionSpeech(vehicle: VehicleDefinition) {
-    if (vehicle.id === "bus") {
-      return "Der Bus ist fertig";
-    }
-
-    if (vehicle.id === "plane") {
-      return "Das Flugzeug ist fertig";
-    }
-
-    return "Der Zug ist fertig";
-  }
-
   function clearGameRound() {
     if (nextRoundTimeoutRef.current) {
       clearTimeout(nextRoundTimeoutRef.current);
@@ -347,8 +424,7 @@ export default function App() {
 
     setIsGameMode(false);
     setIsFindGameModalVisible(false);
-    setGamePrompt("Drücke Start");
-    setGameFeedback("");
+    setGamePrompt("Tippe auf Start");
     setTargetVehicleId(null);
   }
 
@@ -386,70 +462,34 @@ export default function App() {
     ]).start();
   }
 
-  function playZoneBurst(zoneId: ZoneId) {
-    setZoneBurstId(zoneId);
-    zoneBurstScale.setValue(0.7);
-    zoneBurstOpacity.setValue(0);
-
-    Animated.sequence([
-      Animated.parallel([
-        Animated.spring(zoneBurstScale, {
-          toValue: 1.08,
-          useNativeDriver: true,
-          speed: 18,
-          bounciness: 8,
-        }),
-        Animated.timing(zoneBurstOpacity, {
-          toValue: 1,
-          duration: 140,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(zoneBurstOpacity, {
-          toValue: 0,
-          duration: INTERACTION_TIMING.feedback.starBurstDurationMs,
-          useNativeDriver: true,
-        }),
-        Animated.spring(zoneBurstScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          speed: 16,
-          bounciness: 6,
-        }),
-      ]),
-    ]).start(() => {
-      setZoneBurstId(null);
-      setHighlightedZoneId(null);
-    });
-  }
-
   function startFindGame() {
     setIsFreePlayMode(false);
     setIsGameMode(true);
-    setGameFeedback("");
     void askNextQuestion(undefined, {
       openModal: true,
-      helperText: "Höre zu und tippe danach auf das richtige Fahrzeug.",
-      actionLabel: "Los geht's",
+      helperText: "Höre zu und tippe dann auf das passende Fahrzeug in unserem kleinen Bild.",
+      actionLabel: "Starten",
     });
   }
 
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
+    rotatePage((current) => createVehicleSet(current.map((vehicle) => vehicle.id)));
     clearInteractionQueue();
     stopAllSoundEffects();
     void stopGermanSpeech();
+    setResetTrigger((current) => current + 1);
   }
 
   function closeFindGame() {
-    startFreePlay();
+    setIsFreePlayMode(true);
+    rotatePage((current) => createVehicleSet(current.map((vehicle) => vehicle.id)));
+    clearGameRound();
   }
 
   function resetVehiclesToDefault() {
-    setHighlightedZoneId(null);
-    setZoneBurstId(null);
+    rotatePage((current) => createVehicleSet(current.map((vehicle) => vehicle.id)));
     setResetTrigger((current) => current + 1);
   }
 
@@ -461,11 +501,12 @@ export default function App() {
       actionLabel?: string;
     },
   ) {
-    const nextVehicle = pickNextVehicle(previousVehicleId);
+    const nextVehicles = createVehicleSet(visibleVehicles.map((vehicle) => vehicle.id));
+    const nextVehicle = pickTargetVehicle(nextVehicles, previousVehicleId);
     const nextPrompt = getGamePrompt(nextVehicle);
+    rotatePage(() => nextVehicles);
     setResetTrigger((current) => current + 1);
     setTargetVehicleId(nextVehicle.id);
-    setGameFeedback("");
     setGamePrompt(nextPrompt);
     if (modalOptions?.openModal) {
       openFindGameModal({
@@ -482,7 +523,7 @@ export default function App() {
     setFindGameHelperText(
       options?.helperText ?? "Höre zu und tippe danach auf das richtige Fahrzeug.",
     );
-    setFindGameActionLabel(options?.actionLabel ?? "Los geht's");
+    setFindGameActionLabel(options?.actionLabel ?? "Starten");
     setIsFindGameModalVisible(true);
   }
 
@@ -504,12 +545,6 @@ export default function App() {
     return vehicle.advancedPrompts[promptIndex];
   }
 
-  function pickNextVehicle(previousVehicleId?: VehicleId) {
-    const candidates = VEHICLES.filter((vehicle) => vehicle.id !== previousVehicleId);
-    const pool = candidates.length > 0 ? candidates : VEHICLES;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
   function toggleSpeech() {
     setSpeechOnState((current) => !current);
   }
@@ -518,12 +553,38 @@ export default function App() {
     setSoundsOnState((current) => !current);
   }
 
-  const zoneBurstStyle = zoneBurstId
-    ? {
-        left: zones[zoneBurstId].x + zones[zoneBurstId].width / 2 - 36,
-        top: zones[zoneBurstId].y + zones[zoneBurstId].height / 2 - 24,
+  function updateMusicVolume(volume: number) {
+    setMusicVolume(volume);
+  }
+
+  function rotatePage(nextVehiclesFactory: (current: VehicleDefinition[]) => VehicleDefinition[]) {
+    setIsPageTurning(true);
+    pageTurnProgress.stopAnimation();
+    pageTurnProgress.setValue(0);
+
+    Animated.sequence([
+      Animated.timing(pageTurnProgress, {
+        toValue: 0.5,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.spring(pageTurnProgress, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 12,
+        bounciness: 10,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setIsPageTurning(false);
+        pageTurnProgress.setValue(0);
       }
-    : null;
+    });
+
+    setTimeout(() => {
+      setVisibleVehicles((current) => nextVehiclesFactory(current));
+    }, 170);
+  }
 
   return (
     <SafeAreaProvider>
@@ -535,7 +596,7 @@ export default function App() {
             onLongPress={() => setShowParentSettings(true)}
             style={styles.parentIconButton}
           >
-            <Text style={styles.parentIconText}>👪</Text>
+            <Text style={styles.parentIconText}>🌼</Text>
           </Pressable>
 
           {SCENE_ITEMS.map((item) => (
@@ -568,131 +629,297 @@ export default function App() {
             </SceneWordButton>
           ))}
 
-          <View style={styles.headerWrap}>
-            <Text style={styles.eyebrow}>Spielen und Sprechen</Text>
-            <Text style={styles.title}>Transport Deutsch</Text>
-          </View>
+          <View pointerEvents="none" style={styles.backgroundScene}>
+            <View style={styles.hillBack} />
+            <View style={styles.hillFrontLeft} />
+            <View style={styles.hillFrontRight} />
+            <View style={styles.pathCurve} />
 
-          <View style={styles.modeArea}>
-            <View style={styles.modeRow}>
-              <Pressable
-                style={[styles.modeButton, isFreePlayMode ? styles.modeButtonActive : null]}
-                onPress={startFreePlay}
-              >
-                <Text style={styles.modeButtonText}>Free Play</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modeButton, isGameMode ? styles.modeButtonActive : null]}
-                onPress={startFindGame}
-              >
-                <Text style={styles.modeButtonText}>Find Game</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.modeHintBubble}>
-              <Text style={styles.modeHintText}>
-                {isGameMode ? MODE_HINTS.game : MODE_HINTS.freePlay}
-              </Text>
-            </View>
-          </View>
-
-          {successMessage ? (
-            <View style={styles.successBubble}>
-              <Text style={styles.successText}>{successMessage}</Text>
-            </View>
-          ) : null}
-
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.sparkleBurst,
-              {
-                opacity: sparkleOpacity,
-                transform: [{ scale: sparkleScale }],
-              },
-            ]}
-          >
-            <Text style={styles.sparkleText}>✨</Text>
-            <Text style={styles.sparkleText}>⭐</Text>
-            <Text style={styles.sparkleText}>✨</Text>
-          </Animated.View>
-
-          {Object.values(zones).map((zone) => (
-            <DropZone
-              key={zone.id}
-              zone={zone}
-              isHighlighted={highlightedZoneId === zone.id}
-            />
-          ))}
-
-          {zoneBurstId && zoneBurstStyle ? (
             <Animated.View
-              pointerEvents="none"
               style={[
-                styles.zoneBurst,
-                zoneBurstStyle,
+                styles.birdOne,
                 {
-                  opacity: zoneBurstOpacity,
-                  transform: [{ scale: zoneBurstScale }],
+                  transform: [
+                    {
+                      translateX: birdDriftOne.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 10],
+                      }),
+                    },
+                    {
+                      translateY: birdDriftOne.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -4],
+                      }),
+                    },
+                  ],
                 },
               ]}
             >
-              <Text style={styles.zoneBurstText}>⭐</Text>
-              <Text style={styles.zoneBurstText}>✨</Text>
-              <Text style={styles.zoneBurstText}>⭐</Text>
+              <Text style={styles.birdText}>ˇˇ</Text>
             </Animated.View>
-          ) : null}
+            <Animated.View
+              style={[
+                styles.birdTwo,
+                {
+                  transform: [
+                    {
+                      translateX: birdDriftTwo.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -8],
+                      }),
+                    },
+                    {
+                      translateY: birdDriftTwo.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -5],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Text style={styles.birdText}>ˇˇ</Text>
+            </Animated.View>
 
-          <View style={[styles.roadStripe, { top: zones.road.y + 34 }]} />
-          <View style={[styles.roadStripe, { top: zones.road.y + 74 }]} />
-          <View style={[styles.trackLine, { top: zones.track.y + 20 }]} />
-          <View style={[styles.trackLine, { top: zones.track.y + 72 }]} />
-          <View style={[styles.trackTieRow, { top: zones.track.y + 24 }]} />
+            <Animated.View
+              style={[
+                styles.flowerPatchLeft,
+                {
+                  transform: [
+                    {
+                      translateY: flowerBobLeft.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -3],
+                      }),
+                    },
+                    {
+                      rotate: flowerBobLeft.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0deg", "2deg"],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Text style={styles.flowerText}>🌼 🌷</Text>
+            </Animated.View>
+            <Animated.View
+              style={[
+                styles.flowerPatchRight,
+                {
+                  transform: [
+                    {
+                      translateY: flowerBobRight.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -4],
+                      }),
+                    },
+                    {
+                      rotate: flowerBobRight.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0deg", "-2deg"],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Text style={styles.flowerText}>🌸 🌼</Text>
+            </Animated.View>
 
-          {VEHICLES.map((vehicle) => (
-            <VehicleCard
-              key={vehicle.id}
-              vehicle={vehicle}
-              home={homes[vehicle.id]}
-              zones={zones}
-              resetTrigger={resetTrigger}
-              interactionEnabled={!isFindGameModalVisible}
-              tapAnimationToken={tapTokens[vehicle.id]}
-              celebrationToken={celebrationTokens[vehicle.id]}
-              incorrectDropToken={incorrectDropTokens[vehicle.id]}
-              onTap={handleTap}
-              onMatch={handleCorrectDrop}
-              onIncorrectDrop={handleIncorrectDrop}
-              onDragUpdate={handleDragUpdate}
-            />
-          ))}
-
-          <View pointerEvents="none" style={styles.footerBubble}>
-            <Text style={styles.footerText}>Tippe oder ziehe und lerne.</Text>
+            <View style={styles.tinyBushLeft} />
+            <View style={styles.tinyBushRight} />
           </View>
 
-          <FindGameModal
-            visible={isGameMode && isFindGameModalVisible}
-            promptText={gamePrompt}
-            helperText={findGameHelperText}
-            actionLabel={findGameActionLabel}
-            onClose={closeFindGame}
-            onRetry={handleFindGameModalAction}
-          />
+          {!showParentSettings ? (
+            <>
+              <View style={styles.headerWrap}>
+                <Text style={styles.title}>Unsere Reise</Text>
+              </View>
+
+              <View style={styles.modeArea}>
+                <View style={styles.modeRow}>
+                  <View style={styles.modeGroup}>
+                    <Pressable
+                      style={[styles.modeButton, isFreePlayMode ? styles.modeButtonActive : null]}
+                      onPress={startFreePlay}
+                    >
+                      <Text style={styles.modeButtonText}>Spielen</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.shuffleButton}
+                      onPress={resetVehiclesToDefault}
+                      disabled={isFindGameModalVisible}
+                    >
+                      <Text style={styles.shuffleButtonText}>Neue Seite</Text>
+                    </Pressable>
+                  </View>
+                  <Pressable
+                    style={[styles.searchButton, isGameMode ? styles.modeButtonActive : null]}
+                    onPress={startFindGame}
+                  >
+                    <Text style={styles.modeButtonText}>Finde</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {isGameMode && !isFindGameModalVisible ? (
+                <View pointerEvents="none" style={styles.promptChip}>
+                  <Text style={styles.promptChipText}>{gamePrompt}</Text>
+                </View>
+              ) : null}
+
+              {successMessage ? (
+                <View
+                  pointerEvents="none"
+                  style={[styles.successBubble, { top: 126 }]}
+                >
+                  <Text style={styles.successText}>{successMessage}</Text>
+                </View>
+              ) : null}
+
+              {wrongMessage ? (
+                <View pointerEvents="none" style={styles.wrongBubble}>
+                  <Text style={styles.wrongText}>{wrongMessage}</Text>
+                </View>
+              ) : null}
+
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.sparkleBurst,
+                  {
+                    opacity: sparkleOpacity,
+                    transform: [{ scale: sparkleScale }],
+                  },
+                ]}
+              >
+                <Text style={styles.sparkleText}>✨</Text>
+                <Text style={styles.sparkleText}>⭐</Text>
+                <Text style={styles.sparkleText}>✨</Text>
+              </Animated.View>
+
+              <Animated.View
+                pointerEvents="box-none"
+                style={[
+                  styles.vehicleLayer,
+                  {
+                    opacity: pageTurnProgress.interpolate({
+                      inputRange: [0, 0.18, 0.5, 0.82, 1],
+                      outputRange: [1, 0.86, 0.18, 0.86, 1],
+                    }),
+                    transform: [
+                      {
+                        translateX: pageTurnProgress.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [0, -56, 0],
+                        }),
+                      },
+                      {
+                        scale: pageTurnProgress.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [1, 0.92, 1],
+                        }),
+                      },
+                      {
+                        rotate: pageTurnProgress.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: ["0deg", "-4deg", "0deg"],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                {visibleVehicles.map((vehicle, index) => (
+                  <VehicleCard
+                    key={vehicle.id}
+                    vehicle={vehicle}
+                    home={homes[vehicle.id]}
+                    cardSize={layout.vehicleSize}
+                    slotIndex={index}
+                    interactionEnabled={!isFindGameModalVisible}
+                    tapAnimationToken={tapTokens[vehicle.id] ?? 0}
+                    celebrationToken={celebrationTokens[vehicle.id] ?? 0}
+                    wrongTapToken={wrongTapTokens[vehicle.id] ?? 0}
+                    onTap={handleTap}
+                  />
+                ))}
+              </Animated.View>
+
+              {isPageTurning ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.pageTurnSticker,
+                    {
+                      opacity: pageTurnProgress.interpolate({
+                        inputRange: [0, 0.12, 0.86, 1],
+                        outputRange: [0, 1, 1, 0],
+                      }),
+                      transform: [
+                        {
+                          translateX: pageTurnProgress.interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: [30, 0, -26],
+                          }),
+                        },
+                        {
+                          translateY: pageTurnProgress.interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: [18, -10, 6],
+                          }),
+                        },
+                        {
+                          scale: pageTurnProgress.interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: [0.85, 1.12, 0.94],
+                          }),
+                        },
+                        {
+                          rotate: pageTurnProgress.interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: ["-10deg", "6deg", "-4deg"],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.pageTurnStickerText}>✨ Neue Seite ✨</Text>
+                  <View style={styles.pageTurnCloudLeft} />
+                  <View style={styles.pageTurnCloudRight} />
+                </Animated.View>
+              ) : null}
+
+              <FindGameModal
+                visible={isGameMode && isFindGameModalVisible}
+                promptText={gamePrompt}
+                helperText={findGameHelperText}
+                actionLabel={findGameActionLabel}
+                onClose={closeFindGame}
+                onRetry={handleFindGameModalAction}
+              />
+            </>
+          ) : null}
 
           {showParentSettings ? (
             <View style={styles.parentOverlay}>
               <View style={styles.parentCard}>
-                <Text style={styles.parentTitle}>Parent Settings</Text>
-                <Text style={styles.parentHint}>Long-press the corner icon to open.</Text>
+                <Text style={styles.parentTitle}>Elternbereich</Text>
+                <Text style={styles.parentHint}>
+                  Tippe lange auf die kleine Blume oben rechts, um die Einstellungen zu öffnen.
+                </Text>
 
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingLabel}>Speech</Text>
+                  <Text style={styles.settingLabel}>Sprache</Text>
                   <Pressable
                     style={[styles.toggleButton, speechOn ? styles.toggleOn : styles.toggleOff]}
                     onPress={toggleSpeech}
                   >
-                    <Text style={styles.toggleText}>{speechOn ? "On" : "Off"}</Text>
+                    <Text style={styles.toggleText}>{speechOn ? "An" : "Aus"}</Text>
                   </Pressable>
                 </View>
 
@@ -702,11 +929,30 @@ export default function App() {
                     style={[styles.toggleButton, soundsOn ? styles.toggleOn : styles.toggleOff]}
                     onPress={toggleSounds}
                   >
-                    <Text style={styles.toggleText}>{soundsOn ? "On" : "Off"}</Text>
+                    <Text style={styles.toggleText}>{soundsOn ? "An" : "Aus"}</Text>
                   </Pressable>
                 </View>
 
-                <Text style={styles.settingSectionTitle}>Difficulty</Text>
+                <Text style={styles.settingSectionTitle}>Musik</Text>
+                <View style={styles.musicSliderRow}>
+                  {MUSIC_VOLUME_STEPS.map((step, index) => (
+                    <Pressable
+                      key={step}
+                      style={[
+                        styles.musicStep,
+                        musicVolume >= step && step > 0 ? styles.musicStepActive : null,
+                        step === 0 && musicVolume === 0 ? styles.musicStepMuted : null,
+                      ]}
+                      onPress={() => updateMusicVolume(step)}
+                    >
+                      <Text style={styles.musicStepText}>
+                        {index === 0 ? "Aus" : index}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Text style={styles.settingSectionTitle}>Schwierigkeit</Text>
                 <View style={styles.difficultyRow}>
                   {(["easy", "medium", "advanced"] as DifficultyLevel[]).map((level) => (
                     <Pressable
@@ -719,10 +965,10 @@ export default function App() {
                     >
                       <Text style={styles.difficultyLabel}>
                         {level === "easy"
-                          ? "Easy"
+                          ? "Leicht"
                           : level === "medium"
-                            ? "Medium"
-                            : "Advanced"}
+                            ? "Mittel"
+                            : "Knifflig"}
                       </Text>
                     </Pressable>
                   ))}
@@ -730,15 +976,11 @@ export default function App() {
 
                 <Text style={styles.difficultyHint}>{DIFFICULTY_DETAILS[difficulty]}</Text>
 
-                <Pressable style={styles.resetButton} onPress={resetVehiclesToDefault}>
-                  <Text style={styles.resetButtonText}>Reset Vehicles</Text>
-                </Pressable>
-
                 <Pressable
                   style={styles.closeParentButton}
                   onPress={() => setShowParentSettings(false)}
                 >
-                  <Text style={styles.closeParentButtonText}>Close</Text>
+                  <Text style={styles.closeParentButtonText}>Schließen</Text>
                 </Pressable>
               </View>
             </View>
@@ -755,8 +997,36 @@ function bumpVehicleToken(
 ) {
   setter((current) => ({
     ...current,
-    [vehicleId]: current[vehicleId] + 1,
+    [vehicleId]: (current[vehicleId] ?? 0) + 1,
   }));
+}
+
+function createVehicleTokenMap() {
+  return VEHICLES.reduce<VehicleTokenMap>((map, vehicle) => {
+    map[vehicle.id] = 0;
+    return map;
+  }, {});
+}
+
+function createVehicleSet(excludedIds: VehicleId[] = []) {
+  return VISIBLE_ZONE_ORDER.map((zoneId) => pickVehicleForZone(zoneId, excludedIds));
+}
+
+function pickVehicleForZone(zoneId: ZoneId, excludedIds: VehicleId[]) {
+  const vehicles = VEHICLES_BY_ZONE[zoneId];
+  const preferredPool = vehicles.filter((vehicle) => !excludedIds.includes(vehicle.id));
+  const pool = preferredPool.length > 0 ? preferredPool : vehicles;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function pickTargetVehicle(vehicles: VehicleDefinition[], previousVehicleId?: VehicleId) {
+  const candidates = vehicles.filter((vehicle) => vehicle.id !== previousVehicleId);
+  const pool = candidates.length > 0 ? candidates : vehicles;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function pickPraiseMessage() {
+  return PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
 }
 
 function createSurfaceShadow(
@@ -781,20 +1051,6 @@ function createSurfaceShadow(
   } as const;
 }
 
-function createTextGlow(color: string, offsetY: number, radius: number) {
-  if (Platform.OS === "web") {
-    return {
-      textShadow: `0px ${offsetY}px ${radius}px ${color}`,
-    } as const;
-  }
-
-  return {
-    textShadowColor: color,
-    textShadowOffset: { width: 0, height: offsetY },
-    textShadowRadius: radius,
-  } as const;
-}
-
 function hexToRgb(hex: string) {
   const normalized = hex.replace("#", "");
   const expanded =
@@ -816,131 +1072,274 @@ function hexToRgb(hex: string) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#9edcff",
+    backgroundColor: "#bde4f6",
   },
   container: {
     flex: 1,
-    backgroundColor: "#9edcff",
+    backgroundColor: "#bde4f6",
   },
   parentIconButton: {
     position: "absolute",
     top: 16,
     right: 16,
     zIndex: 40,
-    width: 42,
-    height: 42,
+    width: 46,
+    height: 46,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.78)",
+    backgroundColor: "rgba(255,252,245,0.9)",
     alignItems: "center",
     justifyContent: "center",
-    ...createSurfaceShadow("#3d7ca8", 0.16, 8, 4, 4),
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.96)",
+    ...createSurfaceShadow("#758ea3", 0.14, 10, 4, 4),
   },
   parentIconText: {
-    fontSize: 18,
+    fontSize: 20,
   },
   headerWrap: {
-    marginTop: 22,
+    marginTop: 18,
     alignItems: "center",
     paddingHorizontal: 20,
+    zIndex: 12,
   },
-  eyebrow: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+  backgroundScene: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+  hillBack: {
+    position: "absolute",
+    left: -40,
+    right: -30,
+    bottom: 138,
+    height: 140,
+    borderTopLeftRadius: 180,
+    borderTopRightRadius: 180,
+    backgroundColor: "#cfe7bf",
+  },
+  hillFrontLeft: {
+    position: "absolute",
+    left: -24,
+    bottom: 88,
+    width: 230,
+    height: 110,
+    borderTopLeftRadius: 140,
+    borderTopRightRadius: 140,
+    backgroundColor: "#b9d79d",
+    transform: [{ rotate: "-4deg" }],
+  },
+  hillFrontRight: {
+    position: "absolute",
+    right: -18,
+    bottom: 92,
+    width: 250,
+    height: 116,
+    borderTopLeftRadius: 150,
+    borderTopRightRadius: 150,
+    backgroundColor: "#b3d2a0",
+    transform: [{ rotate: "4deg" }],
+  },
+  pathCurve: {
+    position: "absolute",
+    left: "34%",
+    bottom: 86,
+    width: 108,
+    height: 92,
+    borderTopLeftRadius: 70,
+    borderTopRightRadius: 40,
+    borderBottomLeftRadius: 50,
+    borderBottomRightRadius: 50,
+    backgroundColor: "rgba(245, 222, 188, 0.82)",
+    transform: [{ rotate: "8deg" }],
+  },
+  birdOne: {
+    position: "absolute",
+    top: 126,
+    left: 164,
+  },
+  birdTwo: {
+    position: "absolute",
+    top: 154,
+    right: 132,
+  },
+  birdText: {
+    fontSize: 26,
+    color: "rgba(108, 117, 128, 0.72)",
+    letterSpacing: -6,
+  },
+  flowerPatchLeft: {
+    position: "absolute",
+    left: 20,
+    bottom: 76,
+  },
+  flowerPatchRight: {
+    position: "absolute",
+    right: 24,
+    bottom: 70,
+  },
+  flowerText: {
+    fontSize: 24,
+    opacity: 0.92,
+  },
+  tinyBushLeft: {
+    position: "absolute",
+    left: 126,
+    bottom: 134,
+    width: 44,
+    height: 24,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.72)",
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#3d6b87",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
+    backgroundColor: "#9fc48c",
+  },
+  tinyBushRight: {
+    position: "absolute",
+    right: 112,
+    bottom: 142,
+    width: 52,
+    height: 26,
+    borderRadius: 999,
+    backgroundColor: "#a6c792",
   },
   title: {
-    marginTop: 12,
     textAlign: "center",
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: "900",
-    color: "#13415c",
+    color: "#375164",
   },
   modeArea: {
-    marginTop: 22,
+    marginTop: 10,
+    alignItems: "center",
+    zIndex: 12,
   },
   modeRow: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 14,
-    paddingHorizontal: 18,
+    gap: 8,
+    paddingHorizontal: 14,
+    alignItems: "center",
+  },
+  modeGroup: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
   },
   modeButton: {
-    minWidth: 154,
-    minHeight: 66,
-    backgroundColor: "rgba(255,255,255,0.84)",
+    minWidth: 108,
+    minHeight: 48,
+    backgroundColor: "rgba(255,250,244,0.92)",
     borderRadius: 999,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderWidth: 3,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 2,
     borderColor: "rgba(255,255,255,0.94)",
     alignItems: "center",
     justifyContent: "center",
-    ...createSurfaceShadow("#477ca0", 0.16, 10, 5, 4),
+    ...createSurfaceShadow("#8a97a8", 0.12, 10, 5, 3),
   },
   modeButtonActive: {
-    backgroundColor: "#ff966f",
+    backgroundColor: "#f7d7b8",
   },
   modeButtonText: {
-    fontSize: 22,
+    fontSize: 17,
     fontWeight: "900",
-    color: "#17425d",
+    color: "#5d5b6d",
   },
-  modeHintBubble: {
-    alignSelf: "center",
-    marginTop: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+  shuffleButton: {
+    minWidth: 116,
+    minHeight: 48,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.88)",
-    ...createSurfaceShadow("#477ca0", 0.1, 8, 4, 2),
+    backgroundColor: "rgba(244,233,214,0.96)",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.95)",
+    ...createSurfaceShadow("#928979", 0.1, 9, 4, 2),
   },
-  modeHintText: {
+  shuffleButtonText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#7b6656",
+    textAlign: "center",
+  },
+  searchButton: {
+    minWidth: 104,
+    minHeight: 56,
+    backgroundColor: "rgba(255,250,244,0.96)",
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.96)",
+    alignItems: "center",
+    justifyContent: "center",
+    ...createSurfaceShadow("#8a97a8", 0.12, 10, 5, 3),
+  },
+  promptChip: {
+    alignSelf: "center",
+    marginTop: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 250, 244, 0.92)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.94)",
+    zIndex: 12,
+    ...createSurfaceShadow("#8a97a8", 0.08, 8, 4, 2),
+  },
+  promptChipText: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#0b2942",
+    color: "#6a6370",
     textAlign: "center",
   },
   successBubble: {
+    position: "absolute",
     alignSelf: "center",
-    marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: "#fff9ee",
-    ...createSurfaceShadow("#c77b63", 0.12, 10, 5, 3),
+    backgroundColor: "#fff7ee",
+    zIndex: 95,
+    elevation: 95,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.96)",
+    ...createSurfaceShadow("#c9a47f", 0.12, 10, 5, 3),
   },
   successText: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "900",
-    color: "#ff7058",
+    color: "#b97258",
+  },
+  wrongBubble: {
+    position: "absolute",
+    top: 188,
+    alignSelf: "center",
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 242, 214, 0.98)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.96)",
+    zIndex: 94,
+    elevation: 94,
+    ...createSurfaceShadow("#c4a56f", 0.12, 10, 5, 3),
+  },
+  wrongText: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#8d6a3f",
   },
   sparkleBurst: {
     position: "absolute",
-    top: 182,
+    top: 196,
     alignSelf: "center",
     flexDirection: "row",
     gap: 10,
+    zIndex: 30,
+    elevation: 30,
   },
   sparkleText: {
     fontSize: 34,
-  },
-  zoneBurst: {
-    position: "absolute",
-    width: 72,
-    height: 48,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 4,
-  },
-  zoneBurstText: {
-    fontSize: 26,
   },
   cloudOne: {
     position: "absolute",
@@ -967,7 +1366,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 24,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,251,247,0.94)",
   },
   cloudPuffMiddle: {
     position: "absolute",
@@ -975,7 +1374,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 34,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.94)",
+    backgroundColor: "rgba(255,251,247,0.98)",
   },
   cloudPuffRight: {
     position: "absolute",
@@ -984,7 +1383,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 26,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,251,247,0.94)",
   },
   sun: {
     position: "absolute",
@@ -993,10 +1392,10 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 999,
-    backgroundColor: "#ffd97b",
+    backgroundColor: "#ffe39d",
     justifyContent: "center",
     alignItems: "center",
-    ...createSurfaceShadow("#ffd97b", 0.34, 16, 6, 5),
+    ...createSurfaceShadow("#ffd793", 0.26, 16, 6, 5),
   },
   sunInner: {
     width: 42,
@@ -1011,7 +1410,7 @@ const styles = StyleSheet.create({
     width: 132,
     height: 82,
     borderRadius: 24,
-    backgroundColor: "#fff8df",
+    backgroundColor: "#fff5df",
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.95)",
     justifyContent: "center",
@@ -1025,7 +1424,7 @@ const styles = StyleSheet.create({
     width: 146,
     height: 82,
     borderRadius: 24,
-    backgroundColor: "#e5f5ff",
+    backgroundColor: "#eef7ff",
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.95)",
     justifyContent: "center",
@@ -1041,120 +1440,51 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#2f4d62",
   },
-  roadStripe: {
-    position: "absolute",
-    left: 36,
-    right: 36,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.85)",
-  },
-  trackLine: {
-    position: "absolute",
-    left: 24,
-    right: 24,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#715038",
-  },
-  trackTieRow: {
-    position: "absolute",
-    left: 24,
-    right: 24,
-    height: 56,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderColor: "transparent",
-    borderStyle: "dashed",
-    opacity: 0.35,
-  },
-  footerBubble: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    bottom: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderRadius: 28,
-    paddingHorizontal: 22,
-    paddingVertical: 16,
-    ...createSurfaceShadow("#4b7b9c", 0.1, 10, 5, 3),
-  },
-  footerText: {
-    textAlign: "center",
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#20455f",
-  },
-  gameOverlay: {
+  vehicleLayer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    paddingTop: 110,
+    zIndex: 60,
+    elevation: 60,
   },
-  gameCard: {
-    width: "100%",
-    maxWidth: 390,
-    minHeight: 248,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,252,247,0.98)",
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.95)",
-    ...createSurfaceShadow("#103554", 0.16, 18, 10, 7),
-  },
-  closeButton: {
+  pageTurnSticker: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    minWidth: 112,
-    minHeight: 48,
-    backgroundColor: "#dff2ff",
+    top: 196,
+    alignSelf: "center",
+    minWidth: 180,
+    minHeight: 64,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderRadius: 999,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    backgroundColor: "rgba(255, 243, 226, 0.97)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.98)",
+    zIndex: 88,
+    elevation: 88,
     alignItems: "center",
     justifyContent: "center",
+    ...createSurfaceShadow("#c1a688", 0.16, 16, 8, 5),
   },
-  closeButtonText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#215170",
-  },
-  gameTitle: {
-    fontSize: 32,
+  pageTurnStickerText: {
+    fontSize: 24,
     fontWeight: "900",
-    color: "#1d425c",
+    color: "#9f765d",
   },
-  gamePrompt: {
-    marginTop: 18,
-    textAlign: "center",
-    fontSize: 34,
-    fontWeight: "900",
-    color: "#ff7d62",
-  },
-  gameHint: {
-    marginTop: 14,
-    textAlign: "center",
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#41657d",
-  },
-  gameFeedbackBubble: {
-    marginTop: 20,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
+  pageTurnCloudLeft: {
+    position: "absolute",
+    left: 16,
+    bottom: -10,
+    width: 34,
+    height: 18,
     borderRadius: 999,
-    backgroundColor: "#fff0b3",
+    backgroundColor: "rgba(255,255,255,0.88)",
   },
-  gameFeedbackText: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#0b2942",
+  pageTurnCloudRight: {
+    position: "absolute",
+    right: 18,
+    top: -8,
+    width: 28,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.82)",
   },
   parentOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1162,7 +1492,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
-    zIndex: 50,
+    zIndex: 200,
+    elevation: 200,
   },
   parentCard: {
     width: "100%",
@@ -1224,6 +1555,31 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
     color: "#23384d",
+  },
+  musicSliderRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  musicStep: {
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: "#e7ecef",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  musicStepActive: {
+    backgroundColor: "#f4cf9c",
+  },
+  musicStepMuted: {
+    backgroundColor: "#d4dbe0",
+  },
+  musicStepText: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#4c5a66",
   },
   difficultyRow: {
     marginTop: 12,

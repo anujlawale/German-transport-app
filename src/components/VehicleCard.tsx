@@ -1,117 +1,57 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
-import { Point, VehicleDefinition, ZoneId, ZoneLayout } from "../../types";
-import { useVehicleDrag } from "../hooks/useVehicleDrag";
+import {
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Point, VehicleDefinition } from "../../types";
 import {
   createVehicleMotionValues,
   runCelebrationAnimation,
-  runIncorrectDropAnimation,
+  runIncorrectTapAnimation,
   runTapAnimation,
 } from "../utils/vehicleAnimations";
 
 type VehicleCardProps = {
   vehicle: VehicleDefinition;
   home: Point;
-  zones: Record<ZoneId, ZoneLayout>;
-  resetTrigger: number;
+  cardSize: number;
+  slotIndex: number;
   interactionEnabled: boolean;
   tapAnimationToken: number;
   celebrationToken: number;
-  incorrectDropToken: number;
+  wrongTapToken: number;
   onTap: (vehicle: VehicleDefinition) => void;
-  onMatch: (vehicle: VehicleDefinition) => void;
-  onIncorrectDrop: (vehicle: VehicleDefinition) => void;
-  onDragUpdate: (
-    vehicle: VehicleDefinition,
-    update: { isDragging: boolean; isNearPreferredZone: boolean },
-  ) => void;
 };
+
+const IDLE_FLOAT_UP_DURATION_MS = 1200;
+const IDLE_FLOAT_DOWN_DURATION_MS = 1200;
+const IDLE_WIGGLE_STEP_DURATION_MS = 1400;
+
+const CARD_LAYER_STYLE = { zIndex: 120, elevation: 18 } as const;
 
 export function VehicleCard({
   vehicle,
   home,
-  zones,
-  resetTrigger,
+  cardSize,
+  slotIndex,
   interactionEnabled,
   tapAnimationToken,
   celebrationToken,
-  incorrectDropToken,
+  wrongTapToken,
   onTap,
-  onMatch,
-  onIncorrectDrop,
-  onDragUpdate,
 }: VehicleCardProps) {
   const idleFloat = useRef(new Animated.Value(0)).current;
   const idleWiggle = useRef(new Animated.Value(0)).current;
   const motion = useRef(createVehicleMotionValues()).current;
-  const {
-    cardSize,
-    dragScale,
-    dragTranslateX,
-    dragTranslateY,
-    isDragging,
-    isSnapped,
-    panHandlers,
-  } = useVehicleDrag({
-    vehicle,
-    home,
-    preferredZone: zones[vehicle.preferredZone],
-    resetTrigger,
-    interactionEnabled,
-    onTap,
-    onMatch,
-    onIncorrectDrop,
-    onDragUpdate: (update) => onDragUpdate(vehicle, update),
-  });
 
   useEffect(() => {
-    if (isDragging) {
-      idleFloat.stopAnimation();
-      idleWiggle.stopAnimation();
-      idleFloat.setValue(0);
-      idleWiggle.setValue(0);
-      return;
-    }
-
-    const floatLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(idleFloat, {
-          toValue: -4,
-          duration: 1200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(idleFloat, {
-          toValue: 0,
-          duration: 1200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]),
-    );
-
-    const wiggleLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(idleWiggle, {
-          toValue: 1,
-          duration: 1400,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(idleWiggle, {
-          toValue: -1,
-          duration: 1400,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(idleWiggle, {
-          toValue: 0,
-          duration: 1400,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]),
-    );
+    const floatLoop = createIdleFloatLoop(idleFloat);
+    const wiggleLoop = createIdleWiggleLoop(idleWiggle);
 
     floatLoop.start();
     wiggleLoop.start();
@@ -120,35 +60,33 @@ export function VehicleCard({
       floatLoop.stop();
       wiggleLoop.stop();
     };
-  }, [idleFloat, idleWiggle, isDragging]);
+  }, [idleFloat, idleWiggle]);
 
   useEffect(() => {
     if (tapAnimationToken > 0) {
-      runTapAnimation(vehicle.id, motion);
+      runTapAnimation(vehicle, motion);
     }
-  }, [motion, tapAnimationToken, vehicle.id]);
+  }, [motion, tapAnimationToken, vehicle]);
 
   useEffect(() => {
     if (celebrationToken > 0) {
-      runCelebrationAnimation(vehicle.id, motion);
+      runCelebrationAnimation(vehicle, motion);
     }
-  }, [celebrationToken, motion, vehicle.id]);
+  }, [celebrationToken, motion, vehicle]);
 
   useEffect(() => {
-    if (incorrectDropToken > 0) {
-      runIncorrectDropAnimation(motion);
+    if (wrongTapToken > 0) {
+      runIncorrectTapAnimation(motion);
     }
-  }, [incorrectDropToken, motion]);
+  }, [wrongTapToken, motion]);
 
+  const baseTilt = getBaseTilt(slotIndex);
   const combinedTransform = [
-    { translateX: dragTranslateX },
-    { translateY: dragTranslateY },
-    { scale: dragScale },
     { translateY: idleFloat },
     {
       rotate: idleWiggle.interpolate({
         inputRange: [-1, 0, 1],
-        outputRange: ["-2deg", "0deg", "2deg"],
+        outputRange: [`${baseTilt - 2}deg`, `${baseTilt}deg`, `${baseTilt + 2}deg`],
       }),
     },
     { translateX: motion.slideX },
@@ -162,32 +100,162 @@ export function VehicleCard({
     { scale: motion.bounce },
   ] as const;
 
-  const cardLayerStyle = isDragging
-    ? { zIndex: 30, elevation: 12 }
-    : isSnapped
-      ? { zIndex: 20, elevation: 10 }
-      : { zIndex: 5, elevation: 2 };
+  const cardLayerStyle = CARD_LAYER_STYLE;
 
   return (
-    <Animated.View
-      {...panHandlers}
-      pointerEvents={interactionEnabled ? "auto" : "none"}
+    <Pressable
+      disabled={!interactionEnabled}
+      onPress={() => onTap(vehicle)}
       style={[
-        styles.card,
+        styles.pressableWrap,
         {
+          left: home.x,
+          top: home.y,
           width: cardSize,
           height: cardSize,
-          backgroundColor: vehicle.color,
-          transform: combinedTransform,
         },
         cardLayerStyle,
       ]}
     >
-      <Text style={styles.emoji}>{vehicle.emoji}</Text>
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>{vehicle.label}</Text>
-      </View>
-    </Animated.View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.card,
+          {
+            width: cardSize,
+            height: cardSize,
+            backgroundColor: vehicle.color,
+            transform: combinedTransform,
+          },
+        ]}
+      >
+        <View style={styles.faceRow}>
+          <View style={styles.eye} />
+          <View style={styles.eye} />
+        </View>
+        <Text style={styles.emoji}>{vehicle.emoji}</Text>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{vehicle.label}</Text>
+        </View>
+        <View style={styles.shadowDot} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+function getBaseTilt(slotIndex: number) {
+  if (slotIndex === 0) {
+    return -4;
+  }
+
+  if (slotIndex === 2) {
+    return 3;
+  }
+
+  return 0;
+}
+
+const styles = StyleSheet.create({
+  pressableWrap: {
+    position: "absolute",
+  },
+  card: {
+    flex: 1,
+    borderRadius: 34,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.96)",
+    justifyContent: "center",
+    alignItems: "center",
+    ...createSurfaceShadow("#7d8795", 0.14, 14, 8, 6),
+  },
+  faceRow: {
+    position: "absolute",
+    top: 15,
+    flexDirection: "row",
+    gap: 10,
+    opacity: 0.72,
+  },
+  eye: {
+    width: 7,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(70,60,56,0.65)",
+  },
+  emoji: {
+    fontSize: 52,
+  },
+  badge: {
+    marginTop: 10,
+    backgroundColor: "rgba(255,250,245,0.92)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.94)",
+  },
+  badgeText: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#675c62",
+  },
+  shadowDot: {
+    position: "absolute",
+    bottom: 10,
+    width: 44,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(122, 116, 110, 0.1)",
+  },
+});
+
+function resetIdleMotion(idleFloat: Animated.Value, idleWiggle: Animated.Value) {
+  idleFloat.stopAnimation();
+  idleWiggle.stopAnimation();
+  idleFloat.setValue(0);
+  idleWiggle.setValue(0);
+}
+
+function createIdleFloatLoop(idleFloat: Animated.Value) {
+  return Animated.loop(
+    Animated.sequence([
+      Animated.timing(idleFloat, {
+        toValue: -4,
+        duration: IDLE_FLOAT_UP_DURATION_MS,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(idleFloat, {
+        toValue: 0,
+        duration: IDLE_FLOAT_DOWN_DURATION_MS,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+    ]),
+  );
+}
+
+function createIdleWiggleLoop(idleWiggle: Animated.Value) {
+  return Animated.loop(
+    Animated.sequence([
+      Animated.timing(idleWiggle, {
+        toValue: 1,
+        duration: IDLE_WIGGLE_STEP_DURATION_MS,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(idleWiggle, {
+        toValue: -1,
+        duration: IDLE_WIGGLE_STEP_DURATION_MS,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(idleWiggle, {
+        toValue: 0,
+        duration: IDLE_WIGGLE_STEP_DURATION_MS,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+    ]),
   );
 }
 
@@ -219,30 +287,3 @@ function hexToRgb(hex: string) {
 
   return `${(intValue >> 16) & 255}, ${(intValue >> 8) & 255}, ${intValue & 255}`;
 }
-
-const styles = StyleSheet.create({
-  card: {
-    position: "absolute",
-    borderRadius: 34,
-    borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.96)",
-    justifyContent: "center",
-    alignItems: "center",
-    ...createSurfaceShadow("#31536b", 0.18, 14, 8, 7),
-  },
-  emoji: {
-    fontSize: 56,
-  },
-  badge: {
-    marginTop: 10,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  badgeText: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#21455f",
-  },
-});

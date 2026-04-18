@@ -8,12 +8,12 @@ export const INTERACTION_TIMING = {
     speechDelayMs: 220,
     settleDelayMs: 420,
   },
-  correctDrop: {
+  correctSelection: {
     soundDelayMs: 100,
     speechDelayMs: 220,
     celebrationDelayMs: 120,
   },
-  wrongDrop: {
+  wrongSelection: {
     speechDelayMs: 220,
     settleDelayMs: 380,
   },

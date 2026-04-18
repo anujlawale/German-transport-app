@@ -41,7 +41,7 @@ export function queueTapFeedback(options: {
   }, options.speechDelayMs + delayOffsetMs);
 }
 
-export function queueCorrectDropFeedback(options: {
+export function queueCorrectSelectionFeedback(options: {
   speech: string;
   soundDelayMs: number;
   speechDelayMs: number;
@@ -98,7 +98,7 @@ export function queueCorrectDropFeedback(options: {
   }
 }
 
-export function queueIncorrectDropSpeech(text: string, delayMs: number) {
+export function queueIncorrectSelectionSpeech(text: string, delayMs: number) {
   const { token, delayOffsetMs } = beginInteraction();
 
   pendingTimers.speech = setTimeout(() => {

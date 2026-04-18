@@ -1,41 +1,227 @@
-import { VehicleDefinition } from "../../types";
+import { VehicleDefinition, ZoneId } from "../../types";
 
-export const VEHICLES: VehicleDefinition[] = [
+type VehicleSeed = {
+  id: string;
+  emoji: string;
+  label: string;
+  article: string;
+  color: string;
+  phrase: string;
+  preferredZone: ZoneId;
+  advancedPrompts?: string[];
+};
+
+const ROAD_VEHICLES: VehicleSeed[] = [
   {
     id: "bus",
     emoji: "🚌",
     label: "Bus",
-    speechName: "Der Bus",
-    questionPrompt: "Wo ist der Bus?",
-    advancedPrompts: ["Wo ist der Bus?", "Tippe auf den Bus.", "Welcher fährt auf der Straße?"],
-    phrase: "Der Bus fährt",
+    article: "Der",
+    phrase: "fährt auf der Straße",
     color: "#ff8f5a",
     preferredZone: "road",
   },
   {
-    id: "plane",
+    id: "auto",
+    emoji: "🚗",
+    label: "Auto",
+    article: "Das",
+    phrase: "fährt schnell",
+    color: "#ff738a",
+    preferredZone: "road",
+  },
+  {
+    id: "taxi",
+    emoji: "🚕",
+    label: "Taxi",
+    article: "Das",
+    phrase: "holt Menschen ab",
+    color: "#ffd55c",
+    preferredZone: "road",
+  },
+  {
+    id: "polizei",
+    emoji: "🚓",
+    label: "Polizeiauto",
+    article: "Das",
+    phrase: "fährt durch die Stadt",
+    color: "#8cbcff",
+    preferredZone: "road",
+  },
+  {
+    id: "feuerwehr",
+    emoji: "🚒",
+    label: "Feuerwehrauto",
+    article: "Das",
+    phrase: "hilft schnell",
+    color: "#ff6d5f",
+    preferredZone: "road",
+  },
+  {
+    id: "fahrrad",
+    emoji: "🚲",
+    label: "Fahrrad",
+    article: "Das",
+    phrase: "rollt leise",
+    color: "#4fd1c5",
+    preferredZone: "road",
+  },
+];
+
+const SKY_VEHICLES: VehicleSeed[] = [
+  {
+    id: "flugzeug",
     emoji: "✈️",
     label: "Flugzeug",
-    speechName: "Das Flugzeug",
-    questionPrompt: "Wo ist das Flugzeug?",
-    advancedPrompts: [
-      "Wo ist das Flugzeug?",
-      "Tippe auf das Flugzeug.",
-      "Welches fliegt im Himmel?",
-    ],
-    phrase: "Das Flugzeug fliegt",
+    article: "Das",
+    phrase: "fliegt im Himmel",
     color: "#90e0ef",
     preferredZone: "sky",
   },
   {
-    id: "train",
+    id: "hubschrauber",
+    emoji: "🚁",
+    label: "Hubschrauber",
+    article: "Der",
+    phrase: "summt in der Luft",
+    color: "#91f2b3",
+    preferredZone: "sky",
+  },
+  {
+    id: "rakete",
+    emoji: "🚀",
+    label: "Rakete",
+    article: "Die",
+    phrase: "fliegt hoch",
+    color: "#b08cff",
+    preferredZone: "sky",
+  },
+  {
+    id: "heissluftballon",
+    emoji: "🎈",
+    label: "Ballon",
+    article: "Der",
+    phrase: "schwebt langsam",
+    color: "#ffa6c9",
+    preferredZone: "sky",
+  },
+  {
+    id: "ufo",
+    emoji: "🛸",
+    label: "Ufo",
+    article: "Das",
+    phrase: "glitzert am Himmel",
+    color: "#7ee0ff",
+    preferredZone: "sky",
+  },
+  {
+    id: "gleitschirm",
+    emoji: "🪂",
+    label: "Fallschirm",
+    article: "Der",
+    phrase: "schwebt herunter",
+    color: "#ffb86b",
+    preferredZone: "sky",
+  },
+];
+
+const TRACK_VEHICLES: VehicleSeed[] = [
+  {
+    id: "zug",
     emoji: "🚆",
     label: "Zug",
-    speechName: "Der Zug",
-    questionPrompt: "Wo ist der Zug?",
-    advancedPrompts: ["Wo ist der Zug?", "Tippe auf den Zug.", "Welcher fährt auf der Schiene?"],
-    phrase: "Der Zug fährt",
+    article: "Der",
+    phrase: "fährt auf der Schiene",
     color: "#ff6b6b",
     preferredZone: "track",
   },
+  {
+    id: "strassenbahn",
+    emoji: "🚋",
+    label: "Straßenbahn",
+    article: "Die",
+    phrase: "fährt durch die Stadt",
+    color: "#ff9671",
+    preferredZone: "track",
+  },
+  {
+    id: "u-bahn",
+    emoji: "🚇",
+    label: "U-Bahn",
+    article: "Die",
+    phrase: "fährt unter der Erde",
+    color: "#6aa9ff",
+    preferredZone: "track",
+  },
+  {
+    id: "lok",
+    emoji: "🚂",
+    label: "Lok",
+    article: "Die",
+    phrase: "zieht viele Wagen",
+    color: "#6d5bd0",
+    preferredZone: "track",
+  },
+  {
+    id: "monorail",
+    emoji: "🚝",
+    label: "Bahn",
+    article: "Die",
+    phrase: "gleitet auf der Schiene",
+    color: "#6fd08c",
+    preferredZone: "track",
+  },
+  {
+    id: "hochgeschwindigkeitszug",
+    emoji: "🚄",
+    label: "Schnellzug",
+    article: "Der",
+    phrase: "saust sehr schnell",
+    color: "#ff7f7f",
+    preferredZone: "track",
+  },
 ];
+
+const VEHICLE_SEEDS = [...ROAD_VEHICLES, ...SKY_VEHICLES, ...TRACK_VEHICLES];
+
+export const VEHICLES: VehicleDefinition[] = VEHICLE_SEEDS.map((vehicle) =>
+  createVehicleDefinition(vehicle),
+);
+
+export const VEHICLES_BY_ZONE: Record<ZoneId, VehicleDefinition[]> = {
+  road: VEHICLES.filter((vehicle) => vehicle.preferredZone === "road"),
+  sky: VEHICLES.filter((vehicle) => vehicle.preferredZone === "sky"),
+  track: VEHICLES.filter((vehicle) => vehicle.preferredZone === "track"),
+};
+
+function createVehicleDefinition(vehicle: VehicleSeed): VehicleDefinition {
+  const speechName = `${vehicle.article} ${vehicle.label}`;
+
+  return {
+    id: vehicle.id,
+    emoji: vehicle.emoji,
+    label: vehicle.label,
+    speechName,
+    questionPrompt: `Wo ist ${speechName.toLowerCase()}?`,
+    advancedPrompts: vehicle.advancedPrompts ?? [
+      `Wo ist ${speechName.toLowerCase()}?`,
+      `Tippe auf ${speechName.toLowerCase()}.`,
+      getZonePrompt(vehicle.preferredZone),
+    ],
+    phrase: `${speechName} ${vehicle.phrase}`,
+    color: vehicle.color,
+    preferredZone: vehicle.preferredZone,
+  };
+}
+
+function getZonePrompt(zone: ZoneId) {
+  if (zone === "sky") {
+    return "Welches fliegt im Himmel?";
+  }
+
+  if (zone === "track") {
+    return "Welches fährt auf der Schiene?";
+  }
+
+  return "Welches fährt auf der Straße?";
+}
