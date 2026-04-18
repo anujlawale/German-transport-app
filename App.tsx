@@ -107,6 +107,7 @@ export default function App() {
   const [gamePrompt, setGamePrompt] = useState("Tippe auf Start");
   const [targetVehicleId, setTargetVehicleId] = useState<VehicleId | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
+  const [isAirplaneHeroVisible, setIsAirplaneHeroVisible] = useState(false);
   const [tapTokens, setTapTokens] = useState<VehicleTokenMap>(() => createVehicleTokenMap());
   const [celebrationTokens, setCelebrationTokens] = useState<VehicleTokenMap>(() =>
     createVehicleTokenMap(),
@@ -116,6 +117,8 @@ export default function App() {
   );
   const sparkleScale = useRef(new Animated.Value(0)).current;
   const sparkleOpacity = useRef(new Animated.Value(0)).current;
+  const airplaneHeroProgress = useRef(new Animated.Value(0)).current;
+  const airplaneHeroOpacity = useRef(new Animated.Value(0)).current;
   const birdDriftOne = useRef(new Animated.Value(0)).current;
   const birdDriftTwo = useRef(new Animated.Value(0)).current;
   const flowerBobLeft = useRef(new Animated.Value(0)).current;
@@ -125,6 +128,7 @@ export default function App() {
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrongMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalAutoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const airplaneHeroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const layout = useMemo(() => {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
@@ -176,6 +180,9 @@ export default function App() {
       }
       if (modalAutoCloseTimeoutRef.current) {
         clearTimeout(modalAutoCloseTimeoutRef.current);
+      }
+      if (airplaneHeroTimeoutRef.current) {
+        clearTimeout(airplaneHeroTimeoutRef.current);
       }
       if (wrongMessageTimeoutRef.current) {
         clearTimeout(wrongMessageTimeoutRef.current);
@@ -356,6 +363,10 @@ export default function App() {
       soundDelayMs: INTERACTION_TIMING.tap.soundDelayMs,
       speechDelayMs: INTERACTION_TIMING.tap.speechDelayMs,
     });
+
+    if (vehicle.id === "flugzeug") {
+      playAirplaneHeroMoment();
+    }
   }
 
   async function handleGameTap(vehicle: VehicleDefinition) {
@@ -477,6 +488,52 @@ export default function App() {
         }),
       ]),
     ]).start();
+  }
+
+  function playAirplaneHeroMoment() {
+    if (airplaneHeroTimeoutRef.current) {
+      clearTimeout(airplaneHeroTimeoutRef.current);
+    }
+
+    setIsAirplaneHeroVisible(true);
+    airplaneHeroProgress.stopAnimation();
+    airplaneHeroOpacity.stopAnimation();
+    airplaneHeroProgress.setValue(0);
+    airplaneHeroOpacity.setValue(0);
+
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(airplaneHeroOpacity, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.delay(1700),
+        Animated.timing(airplaneHeroOpacity, {
+          toValue: 0,
+          duration: 280,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(airplaneHeroProgress, {
+        toValue: 1,
+        duration: 2200,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setIsAirplaneHeroVisible(false);
+        airplaneHeroProgress.setValue(0);
+        airplaneHeroOpacity.setValue(0);
+      }
+    });
+
+    airplaneHeroTimeoutRef.current = setTimeout(() => {
+      setIsAirplaneHeroVisible(false);
+      airplaneHeroProgress.setValue(0);
+      airplaneHeroOpacity.setValue(0);
+      airplaneHeroTimeoutRef.current = null;
+    }, 2500);
   }
 
   function startFindGame() {
@@ -823,6 +880,119 @@ export default function App() {
                 <Text style={styles.sparkleText}>⭐</Text>
                 <Text style={styles.sparkleText}>✨</Text>
               </Animated.View>
+
+              {isAirplaneHeroVisible ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.airplaneHeroOverlay,
+                    {
+                      opacity: airplaneHeroOpacity,
+                    },
+                  ]}
+                >
+                  <Animated.View
+                    style={[
+                      styles.airplaneHeroCloudOne,
+                      {
+                        opacity: airplaneHeroOpacity.interpolate({
+                          inputRange: [0, 0.2, 1],
+                          outputRange: [0, 0.6, 0],
+                        }),
+                        transform: [
+                          {
+                            translateX: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-50, 30],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.airplaneHeroCloudTwo,
+                      {
+                        opacity: airplaneHeroOpacity.interpolate({
+                          inputRange: [0, 0.25, 1],
+                          outputRange: [0, 0.5, 0],
+                        }),
+                        transform: [
+                          {
+                            translateX: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-20, 40],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  />
+                  <Animated.Text
+                    style={[
+                      styles.airplaneHeroTrail,
+                      {
+                        opacity: airplaneHeroOpacity.interpolate({
+                          inputRange: [0, 0.15, 1],
+                          outputRange: [0, 0.9, 0],
+                        }),
+                        transform: [
+                          {
+                            translateX: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-layout.safeWidth * 0.34, layout.safeWidth * 0.2],
+                            }),
+                          },
+                          {
+                            translateY: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [14, -8, -14],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    ✨  ☁️  ✨
+                  </Animated.Text>
+                  <Animated.Text
+                    style={[
+                      styles.airplaneHeroEmoji,
+                      {
+                        transform: [
+                          {
+                            translateX: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-layout.safeWidth * 0.7, layout.safeWidth * 0.72],
+                            }),
+                          },
+                          {
+                            translateY: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 0.45, 1],
+                              outputRange: [60, -10, -34],
+                            }),
+                          },
+                          {
+                            rotate: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 0.45, 1],
+                              outputRange: ["-6deg", "4deg", "10deg"],
+                            }),
+                          },
+                          {
+                            scale: airplaneHeroProgress.interpolate({
+                              inputRange: [0, 0.3, 1],
+                              outputRange: [0.82, 1.08, 1],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    ✈️
+                  </Animated.Text>
+                </Animated.View>
+              ) : null}
 
               <Animated.View
                 pointerEvents="box-none"
@@ -1394,6 +1564,46 @@ const styles = StyleSheet.create({
   },
   sparkleText: {
     fontSize: 34,
+  },
+  airplaneHeroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 54,
+    elevation: 54,
+    backgroundColor: "rgba(188, 229, 248, 0.35)",
+    overflow: "hidden",
+  },
+  airplaneHeroEmoji: {
+    position: "absolute",
+    top: "42%",
+    left: "18%",
+    fontSize: 118,
+    textShadowColor: "rgba(255,255,255,0.78)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 18,
+  },
+  airplaneHeroTrail: {
+    position: "absolute",
+    top: "49%",
+    left: "30%",
+    fontSize: 30,
+  },
+  airplaneHeroCloudOne: {
+    position: "absolute",
+    top: "26%",
+    left: "12%",
+    width: 118,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.76)",
+  },
+  airplaneHeroCloudTwo: {
+    position: "absolute",
+    top: "60%",
+    right: "12%",
+    width: 92,
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.64)",
   },
   cloudOne: {
     position: "absolute",
