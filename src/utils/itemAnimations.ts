@@ -27,7 +27,7 @@ export function createItemMotionValues(): ItemMotionValues {
 export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) {
   stopMotion(motion);
 
-  if (item.animationStyle === "ground") {
+  if (item.motionStyle === "ground") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 0.93),
@@ -44,7 +44,7 @@ export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) 
     return;
   }
 
-  if (item.animationStyle === "air") {
+  if (item.motionStyle === "air") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -12, 140),
@@ -64,7 +64,7 @@ export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) 
     return;
   }
 
-  if (item.animationStyle === "water") {
+  if (item.motionStyle === "water") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -8, 130),
@@ -101,7 +101,7 @@ export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) 
 export function runCelebrationAnimation(item: ItemDefinition, motion: ItemMotionValues) {
   stopMotion(motion);
 
-  if (item.animationStyle === "ground") {
+  if (item.motionStyle === "ground") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 1.14),
@@ -117,7 +117,7 @@ export function runCelebrationAnimation(item: ItemDefinition, motion: ItemMotion
     return;
   }
 
-  if (item.animationStyle === "air") {
+  if (item.motionStyle === "air") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -18, 180),
@@ -137,7 +137,7 @@ export function runCelebrationAnimation(item: ItemDefinition, motion: ItemMotion
     return;
   }
 
-  if (item.animationStyle === "water") {
+  if (item.motionStyle === "water") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -12, 160),

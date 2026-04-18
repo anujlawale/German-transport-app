@@ -1,7 +1,7 @@
 export type ItemId = string;
 
 export type PictureBookId = "transport" | "profession";
-export type ItemAnimationStyle = "ground" | "air" | "rail" | "water" | "character";
+export type ItemMotionStyle = "ground" | "air" | "rail" | "water" | "character";
 export type ItemSoundEffect = "bus" | "plane" | "train";
 export type BookId = PictureBookId | "mixed";
 
@@ -17,7 +17,7 @@ export type ItemDefinition = {
   phrase: string;
   color: string;
   bookId: PictureBookId;
-  animationStyle: ItemAnimationStyle;
+  motionStyle: ItemMotionStyle;
   soundEffect: ItemSoundEffect;
   wowMoment?: WowMomentDefinition;
 };
@@ -64,7 +64,7 @@ export type PictureBookDefinition = {
   description: string;
   sceneAccents?: BookSceneAccent[];
   defaultPromptHint?: string;
-  promptHintsByAnimationStyle?: Partial<Record<ItemAnimationStyle, string>>;
+  promptHintsByMotionStyle?: Partial<Record<ItemMotionStyle, string>>;
   defaultWowMoment?: WowMomentDefinition;
 };
 
