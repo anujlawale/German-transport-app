@@ -23,6 +23,14 @@ type ItemSeed = {
   wowMoment?: WowMomentDefinition;
 };
 
+const DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE: Record<ItemAnimationStyle, string> = {
+  road: "Welches rollt auf der Straße?",
+  sky: "Welches fliegt hoch?",
+  track: "Welches fährt auf der Schiene?",
+  water: "Welches fährt im Wasser?",
+  character: "Wer ist das?",
+};
+
 const ITEM_SEEDS: ItemSeed[] = [
   {
     id: "bus",
@@ -553,6 +561,194 @@ const ITEM_SEEDS: ItemSeed[] = [
       "Wer baut das Haus?",
     ],
   },
+  {
+    id: "baecker",
+    emoji: "🧑‍🍞",
+    label: "Bäcker",
+    article: "Der",
+    phrase: "backt leckeres Brot",
+    color: "#f0c48a",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der bäcker?", "Tippe auf den bäcker.", "Wer backt Brot?"],
+  },
+  {
+    id: "krankenschwester",
+    emoji: "👩‍⚕️",
+    label: "Krankenschwester",
+    article: "Die",
+    phrase: "hilft im Krankenhaus",
+    color: "#b7dcff",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: [
+      "Wo ist die krankenschwester?",
+      "Tippe auf die krankenschwester.",
+      "Wer hilft im Krankenhaus?",
+    ],
+  },
+  {
+    id: "musiker",
+    emoji: "🧑‍🎤",
+    label: "Musiker",
+    article: "Der",
+    phrase: "macht schöne Musik",
+    color: "#d5a7ff",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der musiker?", "Tippe auf den musiker.", "Wer macht Musik?"],
+  },
+  {
+    id: "florist",
+    emoji: "💐",
+    label: "Florist",
+    article: "Der",
+    phrase: "macht bunte Blumensträuße",
+    color: "#ffb4d9",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der florist?", "Tippe auf den floristen.", "Wer mag Blumen?"],
+  },
+  {
+    id: "mechaniker",
+    emoji: "🧑‍🔧",
+    label: "Mechaniker",
+    article: "Der",
+    phrase: "repariert Autos",
+    color: "#9fc0da",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: [
+      "Wo ist der mechaniker?",
+      "Tippe auf den mechaniker.",
+      "Wer repariert Autos?",
+    ],
+  },
+  {
+    id: "klempner",
+    emoji: "🚰",
+    label: "Klempner",
+    article: "Der",
+    phrase: "repariert Rohre",
+    color: "#8fd0e6",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der klempner?", "Tippe auf den klempner.", "Wer repariert Rohre?"],
+  },
+  {
+    id: "schreiner",
+    emoji: "🪚",
+    label: "Schreiner",
+    article: "Der",
+    phrase: "baut Möbel aus Holz",
+    color: "#cba06d",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der schreiner?", "Tippe auf den schreiner.", "Wer baut aus Holz?"],
+  },
+  {
+    id: "astronaut",
+    emoji: "🧑‍🚀",
+    label: "Astronaut",
+    article: "Der",
+    phrase: "fliegt ins All",
+    color: "#d8e6f5",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "plane",
+    advancedPrompts: ["Wo ist der astronaut?", "Tippe auf den astronauten.", "Wer fliegt ins All?"],
+  },
+  {
+    id: "forscher",
+    emoji: "🔬",
+    label: "Forscher",
+    article: "Der",
+    phrase: "entdeckt neue Dinge",
+    color: "#b9d8ff",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der forscher?", "Tippe auf den forscher.", "Wer entdeckt Neues?"],
+  },
+  {
+    id: "architekt",
+    emoji: "📐",
+    label: "Architekt",
+    article: "Der",
+    phrase: "plant große Häuser",
+    color: "#ffd08a",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der architekt?", "Tippe auf den architekten.", "Wer plant Häuser?"],
+  },
+  {
+    id: "detektiv",
+    emoji: "🕵️",
+    label: "Detektiv",
+    article: "Der",
+    phrase: "sucht nach Spuren",
+    color: "#b5b0d8",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der detektiv?", "Tippe auf den detektiv.", "Wer sucht Spuren?"],
+  },
+  {
+    id: "fotograf",
+    emoji: "📸",
+    label: "Fotograf",
+    article: "Der",
+    phrase: "macht schöne Fotos",
+    color: "#95d0dd",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der fotograf?", "Tippe auf den fotografen.", "Wer macht Fotos?"],
+  },
+  {
+    id: "soldat",
+    emoji: "🪖",
+    label: "Soldat",
+    article: "Der",
+    phrase: "passt gut auf",
+    color: "#9eb07a",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der soldat?", "Tippe auf den soldaten.", "Wer passt auf?"],
+  },
+  {
+    id: "friseur",
+    emoji: "💇",
+    label: "Friseur",
+    article: "Der",
+    phrase: "schneidet Haare",
+    color: "#ffbdd1",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der friseur?", "Tippe auf den friseur.", "Wer schneidet Haare?"],
+  },
+  {
+    id: "paketbote",
+    emoji: "📦",
+    label: "Paketbote",
+    article: "Der",
+    phrase: "bringt Pakete",
+    color: "#f3c47c",
+    bookId: "profession",
+    animationStyle: "character",
+    soundEffect: "bus",
+    advancedPrompts: ["Wo ist der paketbote?", "Tippe auf den paketboten.", "Wer bringt Pakete?"],
+  },
 ];
 
 export const ITEMS: ItemDefinition[] = ITEM_SEEDS.map((item) => createItemDefinition(item));
@@ -663,6 +859,12 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     accentColor: "#ff8f5a",
     description: "Bus, Zug und noch mehr",
     sceneAccents: transportSceneAccents,
+    promptHintsByAnimationStyle: {
+      road: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.road,
+      sky: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.sky,
+      track: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.track,
+      water: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.water,
+    },
   },
   {
     id: "profession",
@@ -672,6 +874,10 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     accentColor: "#7aa8ff",
     description: "Menschen bei der Arbeit",
     sceneAccents: professionSceneAccents,
+    defaultPromptHint: "Wer arbeitet hier?",
+    promptHintsByAnimationStyle: {
+      character: "Wer arbeitet hier?",
+    },
     defaultWowMoment: {
       kind: "badge",
       overlayColor: "rgba(245, 247, 255, 0.26)",
@@ -705,6 +911,7 @@ export function getPictureBookById(bookId: BookId) {
 
 function createItemDefinition(item: ItemSeed): ItemDefinition {
   const speechName = `${item.article} ${item.label}`;
+  const promptHint = getPromptHint(item.bookId, item.animationStyle);
 
   return {
     id: item.id,
@@ -716,7 +923,7 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
       item.advancedPrompts ?? [
         `Wo ist ${speechName.toLowerCase()}?`,
         `Tippe auf ${speechName.toLowerCase()}.`,
-        getPromptHint(item.bookId, item.animationStyle),
+        promptHint,
       ],
     phrase: `${speechName} ${item.phrase}`,
     color: item.color,
@@ -728,21 +935,11 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
 }
 
 function getPromptHint(bookId: PictureBookId, animationStyle: ItemAnimationStyle) {
-  if (bookId === "profession") {
-    return "Wer arbeitet hier?";
-  }
+  const book = getPictureBookById(bookId);
 
-  if (animationStyle === "sky") {
-    return "Welches fliegt hoch?";
-  }
-
-  if (animationStyle === "track") {
-    return "Welches fährt auf der Schiene?";
-  }
-
-  if (animationStyle === "water") {
-    return "Welches fährt im Wasser?";
-  }
-
-  return "Welches rollt auf der Straße?";
+  return (
+    book?.promptHintsByAnimationStyle?.[animationStyle] ??
+    book?.defaultPromptHint ??
+    DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE[animationStyle]
+  );
 }

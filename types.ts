@@ -63,6 +63,8 @@ export type PictureBookDefinition = {
   accentColor: string;
   description: string;
   sceneAccents?: BookSceneAccent[];
+  defaultPromptHint?: string;
+  promptHintsByAnimationStyle?: Partial<Record<ItemAnimationStyle, string>>;
   defaultWowMoment?: WowMomentDefinition;
 };
 
