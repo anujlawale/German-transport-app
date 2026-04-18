@@ -24,9 +24,9 @@ type ItemSeed = {
 };
 
 const DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE: Record<ItemAnimationStyle, string> = {
-  road: "Welches rollt auf der Straße?",
-  sky: "Welches fliegt hoch?",
-  track: "Welches fährt auf der Schiene?",
+  ground: "Welches rollt los?",
+  air: "Welches fliegt hoch?",
+  rail: "Welches fährt auf der Schiene?",
   water: "Welches fährt im Wasser?",
   character: "Wer ist das?",
 };
@@ -40,7 +40,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fährt durch die Stadt",
     color: "#d64d47",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -51,7 +51,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "saust flink los",
     color: "#e35c53",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -62,7 +62,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "holt Menschen ab",
     color: "#ffd55c",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -73,7 +73,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "passt auf uns auf",
     color: "#8cbcff",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -84,7 +84,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "hilft ganz schnell",
     color: "#df594f",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -95,7 +95,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "rollt leise",
     color: "#c74b4a",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -106,7 +106,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fährt lustig durch die Stadt",
     color: "#ffb74d",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -117,7 +117,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "hat zwei Etagen",
     color: "#ff866b",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -128,7 +128,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "saust flink los",
     color: "#f3efef",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -139,7 +139,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "brummt laut",
     color: "#ec8c3f",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -150,7 +150,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "bringt viele Sachen",
     color: "#d7bc43",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -161,7 +161,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "hilft ganz schnell",
     color: "#f4f5f7",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -172,7 +172,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "gräbt die Erde um",
     color: "#ffd166",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -183,7 +183,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "trägt viele Steine",
     color: "#d1b541",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -194,7 +194,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "bringt große Kisten",
     color: "#efe3a6",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -205,7 +205,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "dreht den Beton",
     color: "#9dc7ff",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -216,7 +216,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "arbeitet auf dem Feld",
     color: "#ccb13c",
     bookId: "transport",
-    animationStyle: "road",
+    animationStyle: "ground",
     soundEffect: "bus",
   },
   {
@@ -227,7 +227,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fliegt im Himmel",
     color: "#dbeaf8",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
     wowMoment: {
       kind: "flight",
@@ -244,7 +244,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "schwebt ganz ruhig",
     color: "#f2a552",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
     wowMoment: {
       kind: "flight",
@@ -261,7 +261,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "summt in der Luft",
     color: "#e76a67",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
     wowMoment: {
       kind: "flight",
@@ -278,7 +278,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fliegt hoch hinaus",
     color: "#b08cff",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
     wowMoment: {
       kind: "flight",
@@ -295,7 +295,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fliegt weit im All",
     color: "#d8e2ec",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
     wowMoment: {
       kind: "flight",
@@ -312,7 +312,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "schwebt langsam",
     color: "#cf8bf6",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
     wowMoment: {
       kind: "flight",
@@ -329,7 +329,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "glitzert am Himmel",
     color: "#7ee0ff",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
   },
   {
@@ -340,7 +340,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "schwebt herunter",
     color: "#ffb86b",
     bookId: "transport",
-    animationStyle: "sky",
+    animationStyle: "air",
     soundEffect: "plane",
   },
   {
@@ -351,7 +351,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fährt auf der Schiene",
     color: "#8ca8c5",
     bookId: "transport",
-    animationStyle: "track",
+    animationStyle: "rail",
     soundEffect: "train",
   },
   {
@@ -362,7 +362,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fährt durch die Stadt",
     color: "#ff9671",
     bookId: "transport",
-    animationStyle: "track",
+    animationStyle: "rail",
     soundEffect: "train",
   },
   {
@@ -373,7 +373,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "fährt unter der Erde",
     color: "#6aa9ff",
     bookId: "transport",
-    animationStyle: "track",
+    animationStyle: "rail",
     soundEffect: "train",
   },
   {
@@ -384,7 +384,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "zieht viele Wagen",
     color: "#6d5bd0",
     bookId: "transport",
-    animationStyle: "track",
+    animationStyle: "rail",
     soundEffect: "train",
   },
   {
@@ -395,7 +395,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "gleitet auf der Schiene",
     color: "#6fd08c",
     bookId: "transport",
-    animationStyle: "track",
+    animationStyle: "rail",
     soundEffect: "train",
   },
   {
@@ -406,7 +406,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     phrase: "saust sehr schnell",
     color: "#ff7f7f",
     bookId: "transport",
-    animationStyle: "track",
+    animationStyle: "rail",
     soundEffect: "train",
   },
   {
@@ -860,9 +860,9 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     description: "Bus, Zug und noch mehr",
     sceneAccents: transportSceneAccents,
     promptHintsByAnimationStyle: {
-      road: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.road,
-      sky: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.sky,
-      track: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.track,
+      ground: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.ground,
+      air: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.air,
+      rail: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.rail,
       water: DEFAULT_PROMPT_HINTS_BY_ANIMATION_STYLE.water,
     },
   },

@@ -1,7 +1,7 @@
 export type ItemId = string;
 
 export type PictureBookId = "transport" | "profession";
-export type ItemAnimationStyle = "road" | "sky" | "track" | "water" | "character";
+export type ItemAnimationStyle = "ground" | "air" | "rail" | "water" | "character";
 export type ItemSoundEffect = "bus" | "plane" | "train";
 export type BookId = PictureBookId | "mixed";
 

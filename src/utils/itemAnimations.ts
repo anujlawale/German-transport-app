@@ -27,7 +27,7 @@ export function createItemMotionValues(): ItemMotionValues {
 export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) {
   stopMotion(motion);
 
-  if (item.animationStyle === "road") {
+  if (item.animationStyle === "ground") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 0.93),
@@ -44,7 +44,7 @@ export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) 
     return;
   }
 
-  if (item.animationStyle === "sky") {
+  if (item.animationStyle === "air") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -12, 140),
@@ -101,7 +101,7 @@ export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) 
 export function runCelebrationAnimation(item: ItemDefinition, motion: ItemMotionValues) {
   stopMotion(motion);
 
-  if (item.animationStyle === "road") {
+  if (item.animationStyle === "ground") {
     Animated.parallel([
       Animated.sequence([
         springScale(motion.bounce, 1.14),
@@ -117,7 +117,7 @@ export function runCelebrationAnimation(item: ItemDefinition, motion: ItemMotion
     return;
   }
 
-  if (item.animationStyle === "sky") {
+  if (item.animationStyle === "air") {
     Animated.parallel([
       Animated.sequence([
         timingMotion(motion.liftY, -18, 180),
