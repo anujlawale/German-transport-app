@@ -13,7 +13,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { FindGameModal } from "./src/components/FindGameModal";
 import { SceneWordButton } from "./src/components/SceneWordButton";
 import { VehicleCard } from "./src/components/VehicleCard";
-import { VEHICLES, VEHICLES_BY_ZONE } from "./src/data/vehicles";
+import { VEHICLES } from "./src/data/vehicles";
 import { setSpeechEnabled, speakGerman, stopGermanSpeech } from "./src/utils/audio";
 import {
   clearInteractionQueue,
@@ -31,7 +31,7 @@ import {
   stopAllSoundEffects,
   stopBackgroundMusic,
 } from "./src/utils/soundEffects";
-import { DifficultyLevel, VehicleDefinition, VehicleId, ZoneId } from "./types";
+import { DifficultyLevel, VehicleDefinition, VehicleId } from "./types";
 
 type VehicleHomeMap = Record<VehicleId, { x: number; y: number }>;
 type VehicleTokenMap = Record<VehicleId, number>;
@@ -41,8 +41,6 @@ const DIFFICULTY_DETAILS: Record<DifficultyLevel, string> = {
   medium: "Namen und einfache Sätze.",
   advanced: "Gemischte Fragen im Suchspiel.",
 };
-
-const VISIBLE_ZONE_ORDER: ZoneId[] = ["road", "sky", "track"];
 
 const SCENE_ITEMS = [
   {
@@ -161,6 +159,10 @@ export default function App() {
 
     return nextHomes;
   }, [layout, visibleVehicles]);
+  const isCompactPhone = width <= 430 || height <= 780;
+  const visibleSceneItems = isCompactPhone
+    ? SCENE_ITEMS.filter((item) => item.id !== "station" && item.id !== "airport")
+    : SCENE_ITEMS;
 
   useEffect(() => {
     void initializeSoundEffects();
@@ -609,18 +611,21 @@ export default function App() {
           <Pressable
             delayLongPress={700}
             onLongPress={() => setShowParentSettings(true)}
-            style={styles.parentIconButton}
+            style={[styles.parentIconButton, isCompactPhone ? styles.parentIconButtonCompact : null]}
           >
             <Text style={styles.parentIconText}>🌼</Text>
           </Pressable>
 
-          {SCENE_ITEMS.map((item) => (
+          {visibleSceneItems.map((item) => (
             <SceneWordButton
               key={item.id}
               disabled={!isFreePlayMode || isGameMode || isFindGameModalVisible}
               onPress={() => handleSceneWordTap(item.label, item.phrase)}
               reaction={item.reaction}
-              style={styles[item.style]}
+              style={[
+                styles[item.style],
+                isCompactPhone ? getCompactSceneItemStyle(item.style) : null,
+              ]}
             >
               {item.style === "cloudOne" || item.style === "cloudTwo" ? (
                 <>
@@ -751,13 +756,15 @@ export default function App() {
 
           {!showParentSettings ? (
             <>
-              <View style={styles.headerWrap}>
-                <Text style={styles.title}>Unsere Reise</Text>
+              <View style={[styles.headerWrap, isCompactPhone ? styles.headerWrapCompact : null]}>
+                <Text style={[styles.title, isCompactPhone ? styles.titleCompact : null]}>
+                  Unsere Reise
+                </Text>
               </View>
 
-              <View style={styles.modeArea}>
-                <View style={styles.modeRow}>
-                  <View style={styles.modeGroup}>
+              <View style={[styles.modeArea, isCompactPhone ? styles.modeAreaCompact : null]}>
+                <View style={[styles.modeRow, isCompactPhone ? styles.modeRowCompact : null]}>
+                  <View style={[styles.modeGroup, isCompactPhone ? styles.modeGroupCompact : null]}>
                     <Pressable
                       style={[styles.modeButton, isFreePlayMode ? styles.modeButtonActive : null]}
                       onPress={startFreePlay}
@@ -1025,14 +1032,9 @@ function createVehicleTokenMap() {
 }
 
 function createVehicleSet(excludedIds: VehicleId[] = []) {
-  return VISIBLE_ZONE_ORDER.map((zoneId) => pickVehicleForZone(zoneId, excludedIds));
-}
-
-function pickVehicleForZone(zoneId: ZoneId, excludedIds: VehicleId[]) {
-  const vehicles = VEHICLES_BY_ZONE[zoneId];
-  const preferredPool = vehicles.filter((vehicle) => !excludedIds.includes(vehicle.id));
-  const pool = preferredPool.length > 0 ? preferredPool : vehicles;
-  return pool[Math.floor(Math.random() * pool.length)];
+  const preferredPool = VEHICLES.filter((vehicle) => !excludedIds.includes(vehicle.id));
+  const pool = preferredPool.length >= 3 ? preferredPool : VEHICLES;
+  return pickUniqueVehicles(pool, 3);
 }
 
 function pickTargetVehicle(vehicles: VehicleDefinition[], previousVehicleId?: VehicleId) {
@@ -1043,6 +1045,19 @@ function pickTargetVehicle(vehicles: VehicleDefinition[], previousVehicleId?: Ve
 
 function pickPraiseMessage() {
   return PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
+}
+
+function pickUniqueVehicles(vehicles: VehicleDefinition[], count: number) {
+  const shuffled = [...vehicles];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const current = shuffled[index];
+    shuffled[index] = shuffled[swapIndex];
+    shuffled[swapIndex] = current;
+  }
+
+  return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
 function createSurfaceShadow(
@@ -1112,11 +1127,21 @@ const styles = StyleSheet.create({
   parentIconText: {
     fontSize: 20,
   },
+  parentIconButtonCompact: {
+    top: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+  },
   headerWrap: {
     marginTop: 18,
     alignItems: "center",
     paddingHorizontal: 20,
     zIndex: 12,
+  },
+  headerWrapCompact: {
+    marginTop: 8,
+    paddingHorizontal: 56,
   },
   backgroundScene: {
     ...StyleSheet.absoluteFillObject,
@@ -1220,10 +1245,16 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#375164",
   },
+  titleCompact: {
+    fontSize: 24,
+  },
   modeArea: {
     marginTop: 10,
     alignItems: "center",
     zIndex: 12,
+  },
+  modeAreaCompact: {
+    marginTop: 6,
   },
   modeRow: {
     flexDirection: "row",
@@ -1232,10 +1263,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: "center",
   },
+  modeRowCompact: {
+    gap: 6,
+    paddingHorizontal: 10,
+  },
   modeGroup: {
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
+  },
+  modeGroupCompact: {
+    gap: 6,
   },
   modeButton: {
     minWidth: 108,
@@ -1365,6 +1403,7 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 10,
   },
   cloudTwo: {
     position: "absolute",
@@ -1374,6 +1413,7 @@ const styles = StyleSheet.create({
     height: 62,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 10,
   },
   cloudPuffLeft: {
     position: "absolute",
@@ -1411,6 +1451,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffe39d",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 10,
     ...createSurfaceShadow("#ffd793", 0.26, 16, 6, 5),
   },
   sunInner: {
@@ -1446,6 +1487,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     ...createSurfaceShadow("#5d7990", 0.12, 10, 5, 3),
+  },
+  cloudOneCompact: {
+    top: 82,
+    left: 10,
+    width: 110,
+  },
+  cloudTwoCompact: {
+    top: 112,
+    right: 10,
+    width: 118,
+  },
+  sunCompact: {
+    top: 74,
+    right: 72,
   },
   sceneEmoji: {
     fontSize: 28,
@@ -1654,3 +1709,19 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
 });
+
+function getCompactSceneItemStyle(style: (typeof SCENE_ITEMS)[number]["style"]) {
+  if (style === "cloudOne") {
+    return styles.cloudOneCompact;
+  }
+
+  if (style === "cloudTwo") {
+    return styles.cloudTwoCompact;
+  }
+
+  if (style === "sun") {
+    return styles.sunCompact;
+  }
+
+  return null;
+}

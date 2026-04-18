@@ -16,16 +16,6 @@ export type VehicleDefinition = {
   preferredZone: ZoneId;
 };
 
-export type ZoneLayout = {
-  id: ZoneId;
-  title: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color: string;
-};
-
 export type Point = {
   x: number;
   y: number;

@@ -11,7 +11,7 @@ type VehicleSeed = {
   advancedPrompts?: string[];
 };
 
-const ROAD_VEHICLES: VehicleSeed[] = [
+const VEHICLE_SEEDS: VehicleSeed[] = [
   {
     id: "bus",
     emoji: "🚌",
@@ -66,9 +66,6 @@ const ROAD_VEHICLES: VehicleSeed[] = [
     color: "#4fd1c5",
     preferredZone: "road",
   },
-];
-
-const SKY_VEHICLES: VehicleSeed[] = [
   {
     id: "flugzeug",
     emoji: "✈️",
@@ -123,9 +120,6 @@ const SKY_VEHICLES: VehicleSeed[] = [
     color: "#ffb86b",
     preferredZone: "sky",
   },
-];
-
-const TRACK_VEHICLES: VehicleSeed[] = [
   {
     id: "zug",
     emoji: "🚆",
@@ -182,17 +176,9 @@ const TRACK_VEHICLES: VehicleSeed[] = [
   },
 ];
 
-const VEHICLE_SEEDS = [...ROAD_VEHICLES, ...SKY_VEHICLES, ...TRACK_VEHICLES];
-
 export const VEHICLES: VehicleDefinition[] = VEHICLE_SEEDS.map((vehicle) =>
   createVehicleDefinition(vehicle),
 );
-
-export const VEHICLES_BY_ZONE: Record<ZoneId, VehicleDefinition[]> = {
-  road: VEHICLES.filter((vehicle) => vehicle.preferredZone === "road"),
-  sky: VEHICLES.filter((vehicle) => vehicle.preferredZone === "sky"),
-  track: VEHICLES.filter((vehicle) => vehicle.preferredZone === "track"),
-};
 
 function createVehicleDefinition(vehicle: VehicleSeed): VehicleDefinition {
   const speechName = `${vehicle.article} ${vehicle.label}`;
