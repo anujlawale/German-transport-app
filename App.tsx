@@ -45,15 +45,34 @@ const DIFFICULTY_DETAILS: Record<DifficultyLevel, string> = {
 const VISIBLE_ZONE_ORDER: ZoneId[] = ["road", "sky", "track"];
 
 const SCENE_ITEMS = [
-  { id: "cloud-left", label: "Wolke", phrase: "Die Wolke", style: "cloudOne" as const },
-  { id: "cloud-right", label: "Wolke", phrase: "Die Wolke", style: "cloudTwo" as const },
-  { id: "sun", label: "Sonne", phrase: "Die Sonne", style: "sun" as const },
-  { id: "station", label: "Bahnhof", phrase: "Der Bahnhof", style: "station" as const },
+  {
+    id: "cloud-left",
+    label: "Wolke",
+    phrase: "Die Wolke",
+    style: "cloudOne" as const,
+    reaction: "cloud" as const,
+  },
+  {
+    id: "cloud-right",
+    label: "Wolke",
+    phrase: "Die Wolke",
+    style: "cloudTwo" as const,
+    reaction: "cloud" as const,
+  },
+  { id: "sun", label: "Sonne", phrase: "Die Sonne", style: "sun" as const, reaction: "sun" as const },
+  {
+    id: "station",
+    label: "Bahnhof",
+    phrase: "Der Bahnhof",
+    style: "station" as const,
+    reaction: "station" as const,
+  },
   {
     id: "airport",
     label: "Flughafen",
     phrase: "Der Flughafen",
     style: "airport" as const,
+    reaction: "airport" as const,
   },
 ] as const;
 
@@ -219,13 +238,13 @@ export default function App() {
   }, [wrongMessage]);
 
   useEffect(() => {
-    if (!isGameMode || !isFindGameModalVisible || !gamePrompt) {
+    if (!isGameMode || !gamePrompt) {
       return;
     }
 
     clearInteractionQueue();
     void speakGerman(gamePrompt);
-  }, [gamePrompt, isFindGameModalVisible, isGameMode]);
+  }, [gamePrompt, isGameMode]);
 
   useEffect(() => {
     if (!isFindGameModalVisible) {
@@ -348,10 +367,6 @@ export default function App() {
       "Probier ein anderes!",
       INTERACTION_TIMING.wrongSelection.speechDelayMs,
     );
-    openFindGameModal({
-      helperText: "Schau nochmal. Wir suchen ein anderes Fahrzeug.",
-      actionLabel: "Nochmal hören",
-    });
   }
 
   function handleCorrectSelection(vehicle: VehicleDefinition) {
@@ -364,7 +379,7 @@ export default function App() {
 
       nextRoundTimeoutRef.current = setTimeout(() => {
         void askNextQuestion(vehicle.id, {
-          openModal: true,
+          openModal: false,
           helperText: "Super! Höre die nächste Frage.",
           actionLabel: "Weiter",
         });
@@ -604,6 +619,7 @@ export default function App() {
               key={item.id}
               disabled={!isFreePlayMode || isGameMode || isFindGameModalVisible}
               onPress={() => handleSceneWordTap(item.label, item.phrase)}
+              reaction={item.reaction}
               style={styles[item.style]}
             >
               {item.style === "cloudOne" || item.style === "cloudTwo" ? (
