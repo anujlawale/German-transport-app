@@ -37,7 +37,6 @@ import {
   ItemDefinition,
   ItemId,
   PictureBookDefinition,
-  WowMomentDefinition,
 } from "./types";
 
 type ItemHomeMap = Record<ItemId, { x: number; y: number }>;
@@ -117,8 +116,6 @@ export default function App() {
   const [gamePrompt, setGamePrompt] = useState("Tippe auf Start");
   const [targetItemId, setTargetItemId] = useState<ItemId | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
-  const [activeWowItem, setActiveWowItem] = useState<ItemDefinition | null>(null);
-  const [activeWowMoment, setActiveWowMoment] = useState<WowMomentDefinition | null>(null);
   const [bookTurnDirection, setBookTurnDirection] = useState<1 | -1>(1);
   const [tapTokens, setTapTokens] = useState<ItemTokenMap>(() => createItemTokenMap());
   const [celebrationTokens, setCelebrationTokens] = useState<ItemTokenMap>(() =>
@@ -132,8 +129,6 @@ export default function App() {
   const bookCoverTurn = useRef(new Animated.Value(0)).current;
   const bookCoverLift = useRef(new Animated.Value(0)).current;
   const bookCoverSheen = useRef(new Animated.Value(0)).current;
-  const wowProgress = useRef(new Animated.Value(0)).current;
-  const wowOpacity = useRef(new Animated.Value(0)).current;
   const birdDriftOne = useRef(new Animated.Value(0)).current;
   const birdDriftTwo = useRef(new Animated.Value(0)).current;
   const flowerBobLeft = useRef(new Animated.Value(0)).current;
@@ -143,7 +138,6 @@ export default function App() {
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrongMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalAutoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const wowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const layout = useMemo(() => {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
@@ -198,9 +192,6 @@ export default function App() {
       }
       if (modalAutoCloseTimeoutRef.current) {
         clearTimeout(modalAutoCloseTimeoutRef.current);
-      }
-      if (wowTimeoutRef.current) {
-        clearTimeout(wowTimeoutRef.current);
       }
       if (wrongMessageTimeoutRef.current) {
         clearTimeout(wrongMessageTimeoutRef.current);
@@ -381,11 +372,6 @@ export default function App() {
       soundDelayMs: INTERACTION_TIMING.tap.soundDelayMs,
       speechDelayMs: INTERACTION_TIMING.tap.speechDelayMs,
     });
-
-    const wowMoment = item.wowMoment ?? getDefaultWowMomentForItem(item);
-    if (wowMoment) {
-      playWowMoment(item, wowMoment);
-    }
   }
 
   async function handleGameTap(item: ItemDefinition) {
@@ -507,62 +493,6 @@ export default function App() {
         }),
       ]),
     ]).start();
-  }
-
-  function getDefaultWowMomentForItem(item: ItemDefinition) {
-    return getPictureBookById(item.bookId)?.defaultWowMoment ?? null;
-  }
-
-  function playWowMoment(item: ItemDefinition, wowMoment: WowMomentDefinition) {
-    if (wowTimeoutRef.current) {
-      clearTimeout(wowTimeoutRef.current);
-    }
-
-    const totalDuration = wowMoment.durationMs ?? 2200;
-    const fadeOutDelay = Math.max(900, totalDuration - 800);
-
-    setActiveWowItem(item);
-    setActiveWowMoment(wowMoment);
-    wowProgress.stopAnimation();
-    wowOpacity.stopAnimation();
-    wowProgress.setValue(0);
-    wowOpacity.setValue(0);
-
-    Animated.parallel([
-      Animated.sequence([
-        Animated.timing(wowOpacity, {
-          toValue: 1,
-          duration: wowMoment.kind === "flight" ? 180 : 160,
-          useNativeDriver: true,
-        }),
-        Animated.delay(fadeOutDelay),
-        Animated.timing(wowOpacity, {
-          toValue: 0,
-          duration: 260,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.timing(wowProgress, {
-        toValue: 1,
-        duration: totalDuration - 300,
-        useNativeDriver: true,
-      }),
-    ]).start(({ finished }) => {
-      if (finished) {
-        setActiveWowItem(null);
-        setActiveWowMoment(null);
-        wowProgress.setValue(0);
-        wowOpacity.setValue(0);
-      }
-    });
-
-    wowTimeoutRef.current = setTimeout(() => {
-      setActiveWowItem(null);
-      setActiveWowMoment(null);
-      wowProgress.setValue(0);
-      wowOpacity.setValue(0);
-      wowTimeoutRef.current = null;
-    }, totalDuration);
   }
 
   function startFindGame() {
@@ -1145,183 +1075,6 @@ export default function App() {
                 <Text style={styles.sparkleText}>⭐</Text>
                 <Text style={styles.sparkleText}>✨</Text>
               </Animated.View>
-
-              {activeWowItem && activeWowMoment?.kind === "flight" ? (
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    styles.wowFlightOverlay,
-                    {
-                      opacity: wowOpacity,
-                      backgroundColor:
-                        activeWowMoment.overlayColor ?? "rgba(188, 229, 248, 0.35)",
-                    },
-                  ]}
-                >
-                  <Animated.View
-                    style={[
-                      styles.wowFlightCloudOne,
-                      {
-                        opacity: wowOpacity.interpolate({
-                          inputRange: [0, 0.2, 1],
-                          outputRange: [0, 0.6, 0],
-                        }),
-                        transform: [
-                          {
-                            translateX: wowProgress.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [-50, 30],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  />
-                  <Animated.View
-                    style={[
-                      styles.wowFlightCloudTwo,
-                      {
-                        opacity: wowOpacity.interpolate({
-                          inputRange: [0, 0.25, 1],
-                          outputRange: [0, 0.5, 0],
-                        }),
-                        transform: [
-                          {
-                            translateX: wowProgress.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [-20, 40],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  />
-                  <Animated.Text
-                    style={[
-                      styles.wowFlightTrail,
-                      {
-                        opacity: wowOpacity.interpolate({
-                          inputRange: [0, 0.15, 1],
-                          outputRange: [0, 0.9, 0],
-                        }),
-                        transform: [
-                          {
-                            translateX: wowProgress.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [-layout.safeWidth * 0.34, layout.safeWidth * 0.2],
-                            }),
-                          },
-                          {
-                            translateY: wowProgress.interpolate({
-                              inputRange: [0, 0.5, 1],
-                              outputRange: [14, -8, -14],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  >
-                    {activeWowMoment.trailText ?? "✨  ☁️  ✨"}
-                  </Animated.Text>
-                  <Animated.Text
-                    style={[
-                      styles.wowFlightEmoji,
-                      {
-                        transform: [
-                          {
-                            translateX: wowProgress.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [-layout.safeWidth * 0.7, layout.safeWidth * 0.72],
-                            }),
-                          },
-                          {
-                            translateY: wowProgress.interpolate({
-                              inputRange: [0, 0.45, 1],
-                              outputRange: [60, -10, -34],
-                            }),
-                          },
-                          {
-                            rotate: wowProgress.interpolate({
-                              inputRange: [0, 0.45, 1],
-                              outputRange: ["-6deg", "4deg", "10deg"],
-                            }),
-                          },
-                          {
-                            scale: wowProgress.interpolate({
-                              inputRange: [0, 0.3, 1],
-                              outputRange: [0.82, 1.08, 1],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  >
-                    {activeWowMoment.emoji ?? activeWowItem.emoji}
-                  </Animated.Text>
-                </Animated.View>
-              ) : null}
-
-              {activeWowItem && activeWowMoment?.kind === "badge" ? (
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    styles.wowBadgeOverlay,
-                    {
-                      opacity: wowOpacity,
-                      backgroundColor:
-                        activeWowMoment.overlayColor ?? "rgba(245, 247, 255, 0.26)",
-                    },
-                  ]}
-                >
-                  <Animated.View
-                    style={[
-                      styles.wowBadgeBubble,
-                      {
-                        backgroundColor: `${activeWowItem.color}dd`,
-                        transform: [
-                          {
-                            scale: wowProgress.interpolate({
-                              inputRange: [0, 0.35, 1],
-                              outputRange: [0.75, 1.08, 1],
-                            }),
-                          },
-                          {
-                            translateY: wowProgress.interpolate({
-                              inputRange: [0, 0.5, 1],
-                              outputRange: [26, -10, -2],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  >
-                    <Animated.Text
-                      style={[
-                        styles.wowBadgeSparkle,
-                        {
-                          opacity: wowOpacity.interpolate({
-                            inputRange: [0, 0.15, 1],
-                            outputRange: [0, 0.95, 0],
-                          }),
-                          transform: [
-                            {
-                              translateY: wowProgress.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [10, -18],
-                              }),
-                            },
-                          ],
-                        },
-                      ]}
-                    >
-                      {activeWowMoment.sparkleText ?? "✨ ✨"}
-                    </Animated.Text>
-                    <Text style={styles.wowBadgeLabel}>{activeWowItem.label}</Text>
-                    <Text style={styles.wowBadgeEmoji}>{activeWowItem.emoji}</Text>
-                    <Text style={styles.wowBadgeHint}>{activeWowMoment.hintText ?? "Hallo!"}</Text>
-                  </Animated.View>
-                </Animated.View>
-              ) : null}
 
               <Animated.View
                 pointerEvents="box-none"
@@ -1989,83 +1742,6 @@ const styles = StyleSheet.create({
   },
   sparkleText: {
     fontSize: 34,
-  },
-  wowFlightOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 54,
-    elevation: 54,
-    backgroundColor: "rgba(188, 229, 248, 0.35)",
-    overflow: "hidden",
-  },
-  wowFlightEmoji: {
-    position: "absolute",
-    top: "42%",
-    left: "18%",
-    fontSize: 118,
-    textShadowColor: "rgba(255,255,255,0.78)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 18,
-  },
-  wowFlightTrail: {
-    position: "absolute",
-    top: "49%",
-    left: "30%",
-    fontSize: 30,
-  },
-  wowFlightCloudOne: {
-    position: "absolute",
-    top: "26%",
-    left: "12%",
-    width: 118,
-    height: 44,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.76)",
-  },
-  wowFlightCloudTwo: {
-    position: "absolute",
-    top: "60%",
-    right: "12%",
-    width: 92,
-    height: 36,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.64)",
-  },
-  wowBadgeOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 53,
-    elevation: 53,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(245, 247, 255, 0.26)",
-  },
-  wowBadgeBubble: {
-    minWidth: 220,
-    minHeight: 220,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    ...createSurfaceShadow("#8ea2bf", 0.16, 14, 7, 4),
-  },
-  wowBadgeSparkle: {
-    position: "absolute",
-    top: 30,
-    fontSize: 26,
-  },
-  wowBadgeLabel: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: "#495b6b",
-  },
-  wowBadgeEmoji: {
-    marginTop: 8,
-    fontSize: 82,
-  },
-  wowBadgeHint: {
-    marginTop: 6,
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#5d6f81",
   },
   cloudOne: {
     position: "absolute",

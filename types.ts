@@ -19,24 +19,7 @@ export type ItemDefinition = {
   bookId: PictureBookId;
   motionStyle: ItemMotionStyle;
   soundEffect: ItemSoundEffect;
-  wowMoment?: WowMomentDefinition;
 };
-
-export type WowMomentDefinition =
-  | {
-      kind: "flight";
-      emoji?: string;
-      overlayColor?: string;
-      trailText?: string;
-      durationMs?: number;
-    }
-  | {
-      kind: "badge";
-      overlayColor?: string;
-      sparkleText?: string;
-      hintText?: string;
-      durationMs?: number;
-    };
 
 export type BookSceneAccent = {
   kind: "emoji" | "shape";
@@ -65,7 +48,6 @@ export type PictureBookDefinition = {
   sceneAccents?: BookSceneAccent[];
   defaultPromptHint?: string;
   promptHintsByMotionStyle?: Partial<Record<ItemMotionStyle, string>>;
-  defaultWowMoment?: WowMomentDefinition;
 };
 
 export type Point = {

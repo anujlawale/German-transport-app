@@ -6,7 +6,6 @@ import {
   PictureBookDefinition,
   PictureBookId,
   ItemSoundEffect,
-  WowMomentDefinition,
 } from "../../types";
 
 type ItemSeed = {
@@ -20,7 +19,6 @@ type ItemSeed = {
   motionStyle: ItemMotionStyle;
   soundEffect: ItemSoundEffect;
   advancedPrompts?: string[];
-  wowMoment?: WowMomentDefinition;
 };
 
 const DEFAULT_PROMPT_HINTS_BY_MOTION_STYLE: Record<ItemMotionStyle, string> = {
@@ -229,12 +227,6 @@ const ITEM_SEEDS: ItemSeed[] = [
     bookId: "transport",
     motionStyle: "air",
     soundEffect: "plane",
-    wowMoment: {
-      kind: "flight",
-      overlayColor: "rgba(188, 229, 248, 0.35)",
-      trailText: "✨  ☁️  ✨",
-      durationMs: 2500,
-    },
   },
   {
     id: "luftschiff",
@@ -246,12 +238,6 @@ const ITEM_SEEDS: ItemSeed[] = [
     bookId: "transport",
     motionStyle: "air",
     soundEffect: "plane",
-    wowMoment: {
-      kind: "flight",
-      overlayColor: "rgba(255, 214, 164, 0.28)",
-      trailText: "☁️  ✨",
-      durationMs: 2300,
-    },
   },
   {
     id: "hubschrauber",
@@ -263,12 +249,6 @@ const ITEM_SEEDS: ItemSeed[] = [
     bookId: "transport",
     motionStyle: "air",
     soundEffect: "plane",
-    wowMoment: {
-      kind: "flight",
-      overlayColor: "rgba(255, 211, 214, 0.28)",
-      trailText: "✨  ✨",
-      durationMs: 2200,
-    },
   },
   {
     id: "rakete",
@@ -280,12 +260,6 @@ const ITEM_SEEDS: ItemSeed[] = [
     bookId: "transport",
     motionStyle: "air",
     soundEffect: "plane",
-    wowMoment: {
-      kind: "flight",
-      overlayColor: "rgba(205, 190, 255, 0.3)",
-      trailText: "✨  🚀  ✨",
-      durationMs: 2400,
-    },
   },
   {
     id: "space-shuttle",
@@ -297,12 +271,6 @@ const ITEM_SEEDS: ItemSeed[] = [
     bookId: "transport",
     motionStyle: "air",
     soundEffect: "plane",
-    wowMoment: {
-      kind: "flight",
-      overlayColor: "rgba(216, 226, 236, 0.28)",
-      trailText: "⭐  ✨  ⭐",
-      durationMs: 2400,
-    },
   },
   {
     id: "heissluftballon",
@@ -314,12 +282,6 @@ const ITEM_SEEDS: ItemSeed[] = [
     bookId: "transport",
     motionStyle: "air",
     soundEffect: "plane",
-    wowMoment: {
-      kind: "flight",
-      overlayColor: "rgba(239, 199, 255, 0.28)",
-      trailText: "☁️  ✨",
-      durationMs: 2200,
-    },
   },
   {
     id: "ufo",
@@ -878,13 +840,6 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     promptHintsByMotionStyle: {
       character: "Wer arbeitet hier?",
     },
-    defaultWowMoment: {
-      kind: "badge",
-      overlayColor: "rgba(245, 247, 255, 0.26)",
-      sparkleText: "✨ ✨",
-      hintText: "Hallo!",
-      durationMs: 2100,
-    },
   },
   {
     id: "mixed",
@@ -930,7 +885,6 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
     bookId: item.bookId,
     motionStyle: item.motionStyle,
     soundEffect: item.soundEffect,
-    wowMoment: item.wowMoment,
   };
 }
 
