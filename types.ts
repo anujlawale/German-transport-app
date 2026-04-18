@@ -22,6 +22,23 @@ export type ItemDefinition = {
   soundEffect: ItemSoundEffect;
 };
 
+export type BookSceneAccent = {
+  kind: "emoji" | "shape";
+  value?: string;
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+  width?: number;
+  height?: number;
+  size?: number;
+  color?: string;
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  letterSpacing?: number;
+};
+
 export type PictureBookDefinition = {
   id: BookId;
   label: string;
@@ -29,6 +46,7 @@ export type PictureBookDefinition = {
   color: string;
   accentColor: string;
   description: string;
+  sceneAccents?: BookSceneAccent[];
 };
 
 export type Point = {

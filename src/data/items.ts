@@ -1,5 +1,6 @@
 import {
   BookId,
+  BookSceneAccent,
   ItemAnimationStyle,
   ItemCategory,
   ItemDefinition,
@@ -419,6 +420,103 @@ const ITEM_SEEDS: ItemSeed[] = [
 
 export const ITEMS: ItemDefinition[] = ITEM_SEEDS.map((item) => createItemDefinition(item));
 
+const transportSceneAccents: BookSceneAccent[] = [
+  {
+    kind: "shape",
+    right: 62,
+    bottom: 154,
+    width: 24,
+    height: 74,
+    borderRadius: 999,
+    backgroundColor: "rgba(91, 110, 126, 0.24)",
+  },
+  {
+    kind: "emoji",
+    value: "🛣️",
+    right: 44,
+    bottom: 204,
+    size: 20,
+    opacity: 0.78,
+  },
+  {
+    kind: "emoji",
+    value: "⋯⋯",
+    left: 54,
+    top: 122,
+    size: 22,
+    color: "rgba(255,255,255,0.7)",
+    opacity: 1,
+    letterSpacing: 2,
+  },
+];
+
+const professionSceneAccents: BookSceneAccent[] = [
+  {
+    kind: "shape",
+    left: 40,
+    bottom: 168,
+    width: 52,
+    height: 52,
+    borderRadius: 999,
+    backgroundColor: "rgba(122, 168, 255, 0.18)",
+  },
+  {
+    kind: "shape",
+    right: 46,
+    top: 212,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 194, 136, 0.18)",
+  },
+  {
+    kind: "emoji",
+    value: "🩺",
+    left: 52,
+    bottom: 180,
+    size: 24,
+    opacity: 0.82,
+  },
+  {
+    kind: "emoji",
+    value: "🧰",
+    right: 58,
+    top: 224,
+    size: 22,
+    opacity: 0.82,
+  },
+];
+
+const mixedSceneAccents: BookSceneAccent[] = [
+  {
+    kind: "shape",
+    left: 42,
+    top: 196,
+    width: 14,
+    height: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 164, 189, 0.36)",
+  },
+  {
+    kind: "shape",
+    right: 64,
+    top: 146,
+    width: 12,
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: "rgba(134, 201, 255, 0.4)",
+  },
+  {
+    kind: "shape",
+    right: 108,
+    bottom: 186,
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: "rgba(182, 144, 255, 0.28)",
+  },
+];
+
 export const PICTURE_BOOKS: PictureBookDefinition[] = [
   {
     id: "transport",
@@ -427,6 +525,7 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     color: "#ffd8b5",
     accentColor: "#ff8f5a",
     description: "Bus, Zug und noch mehr",
+    sceneAccents: transportSceneAccents,
   },
   {
     id: "profession",
@@ -435,6 +534,7 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     color: "#d7ebff",
     accentColor: "#7aa8ff",
     description: "Menschen bei der Arbeit",
+    sceneAccents: professionSceneAccents,
   },
   {
     id: "mixed",
@@ -443,6 +543,7 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     color: "#f4e2ff",
     accentColor: "#c488ff",
     description: "Bunt gemischt",
+    sceneAccents: mixedSceneAccents,
   },
 ];
 

@@ -111,6 +111,7 @@ export default function App() {
   const [targetItemId, setTargetItemId] = useState<ItemId | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
   const [isAirplaneHeroVisible, setIsAirplaneHeroVisible] = useState(false);
+  const [professionHeroItem, setProfessionHeroItem] = useState<ItemDefinition | null>(null);
   const [bookTurnDirection, setBookTurnDirection] = useState<1 | -1>(1);
   const [tapTokens, setTapTokens] = useState<ItemTokenMap>(() => createItemTokenMap());
   const [celebrationTokens, setCelebrationTokens] = useState<ItemTokenMap>(() =>
@@ -126,6 +127,8 @@ export default function App() {
   const bookCoverSheen = useRef(new Animated.Value(0)).current;
   const airplaneHeroProgress = useRef(new Animated.Value(0)).current;
   const airplaneHeroOpacity = useRef(new Animated.Value(0)).current;
+  const professionHeroProgress = useRef(new Animated.Value(0)).current;
+  const professionHeroOpacity = useRef(new Animated.Value(0)).current;
   const birdDriftOne = useRef(new Animated.Value(0)).current;
   const birdDriftTwo = useRef(new Animated.Value(0)).current;
   const flowerBobLeft = useRef(new Animated.Value(0)).current;
@@ -136,6 +139,7 @@ export default function App() {
   const wrongMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalAutoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const airplaneHeroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const professionHeroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const layout = useMemo(() => {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
@@ -176,6 +180,8 @@ export default function App() {
     ? SCENE_ITEMS.filter((item) => item.id !== "station" && item.id !== "airport")
     : SCENE_ITEMS;
   const previewBook = PICTURE_BOOKS[previewBookIndex] ?? PICTURE_BOOKS[0];
+  const activeBook =
+    PICTURE_BOOKS.find((book) => book.id === activeBookId) ?? PICTURE_BOOKS[0];
 
   useEffect(() => {
     void initializeSoundEffects();
@@ -192,6 +198,9 @@ export default function App() {
       }
       if (airplaneHeroTimeoutRef.current) {
         clearTimeout(airplaneHeroTimeoutRef.current);
+      }
+      if (professionHeroTimeoutRef.current) {
+        clearTimeout(professionHeroTimeoutRef.current);
       }
       if (wrongMessageTimeoutRef.current) {
         clearTimeout(wrongMessageTimeoutRef.current);
@@ -375,6 +384,11 @@ export default function App() {
 
     if (item.id === "flugzeug") {
       playAirplaneHeroMoment();
+      return;
+    }
+
+    if (item.category === "profession") {
+      playProfessionHeroMoment(item);
     }
   }
 
@@ -545,6 +559,52 @@ export default function App() {
     }, 2500);
   }
 
+  function playProfessionHeroMoment(item: ItemDefinition) {
+    if (professionHeroTimeoutRef.current) {
+      clearTimeout(professionHeroTimeoutRef.current);
+    }
+
+    setProfessionHeroItem(item);
+    professionHeroProgress.stopAnimation();
+    professionHeroOpacity.stopAnimation();
+    professionHeroProgress.setValue(0);
+    professionHeroOpacity.setValue(0);
+
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(professionHeroOpacity, {
+          toValue: 1,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.delay(1450),
+        Animated.timing(professionHeroOpacity, {
+          toValue: 0,
+          duration: 260,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(professionHeroProgress, {
+        toValue: 1,
+        duration: 1900,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setProfessionHeroItem(null);
+        professionHeroProgress.setValue(0);
+        professionHeroOpacity.setValue(0);
+      }
+    });
+
+    professionHeroTimeoutRef.current = setTimeout(() => {
+      setProfessionHeroItem(null);
+      professionHeroProgress.setValue(0);
+      professionHeroOpacity.setValue(0);
+      professionHeroTimeoutRef.current = null;
+    }, 2100);
+  }
+
   function startFindGame() {
     setIsFreePlayMode(false);
     setIsGameMode(true);
@@ -643,6 +703,8 @@ export default function App() {
 
   function cycleBook(direction: "left" | "right") {
     const delta: 1 | -1 = direction === "left" ? -1 : 1;
+    const nextIndex = (previewBookIndex + delta + PICTURE_BOOKS.length) % PICTURE_BOOKS.length;
+    const nextBook = PICTURE_BOOKS[nextIndex] ?? PICTURE_BOOKS[0];
     setBookTurnDirection(delta);
     bookCoverTurn.stopAnimation();
     bookCoverLift.stopAnimation();
@@ -672,7 +734,9 @@ export default function App() {
         return;
       }
 
-      setPreviewBookIndex((current) => (current + delta + PICTURE_BOOKS.length) % PICTURE_BOOKS.length);
+      setPreviewBookIndex(nextIndex);
+      clearInteractionQueue();
+      void speakGerman(nextBook.label);
 
       Animated.parallel([
         Animated.timing(bookCoverTurn, {
@@ -745,6 +809,53 @@ export default function App() {
     }, 170);
   }
 
+  function renderBookAccents(book: PictureBookDefinition) {
+    return book.sceneAccents?.map((accent, index) => {
+      const sharedPosition = {
+        top: accent.top,
+        right: accent.right,
+        bottom: accent.bottom,
+        left: accent.left,
+        opacity: accent.opacity ?? 1,
+      };
+
+      if (accent.kind === "emoji") {
+        return (
+          <Text
+            key={`${book.id}-accent-${index}`}
+            style={[
+              styles.bookAccentEmoji,
+              sharedPosition,
+              {
+                fontSize: accent.size ?? 20,
+                color: accent.color,
+                letterSpacing: accent.letterSpacing,
+              },
+            ]}
+          >
+            {accent.value}
+          </Text>
+        );
+      }
+
+      return (
+        <View
+          key={`${book.id}-accent-${index}`}
+          style={[
+            styles.bookAccentShape,
+            sharedPosition,
+            {
+              width: accent.width ?? 16,
+              height: accent.height ?? 16,
+              borderRadius: accent.borderRadius ?? 999,
+              backgroundColor: accent.backgroundColor ?? "rgba(255,255,255,0.25)",
+            },
+          ]}
+        />
+      );
+    });
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safeArea}>
@@ -793,28 +904,7 @@ export default function App() {
           ))}
 
           <View pointerEvents="none" style={styles.backgroundScene}>
-            {activeBookId === "transport" ? (
-              <>
-                <View style={styles.bookAccentRoadSign} />
-                <Text style={styles.bookAccentTransportEmoji}>🛣️</Text>
-                <Text style={styles.bookAccentTransportTrail}>⋯⋯</Text>
-              </>
-            ) : null}
-            {activeBookId === "profession" ? (
-              <>
-                <View style={styles.bookAccentBadgeLeft} />
-                <View style={styles.bookAccentBadgeRight} />
-                <Text style={styles.bookAccentProfessionOne}>🩺</Text>
-                <Text style={styles.bookAccentProfessionTwo}>🧰</Text>
-              </>
-            ) : null}
-            {activeBookId === "mixed" ? (
-              <>
-                <View style={styles.bookAccentDotOne} />
-                <View style={styles.bookAccentDotTwo} />
-                <View style={styles.bookAccentDotThree} />
-              </>
-            ) : null}
+            {renderBookAccents(activeBook)}
             <View style={styles.hillBack} />
             <View style={styles.hillFrontLeft} />
             <View style={styles.hillFrontRight} />
@@ -1015,6 +1105,15 @@ export default function App() {
                         { backgroundColor: previewBook.accentColor },
                       ]}
                     />
+                    {activeBookId === previewBook.id ? (
+                      <View
+                        pointerEvents="none"
+                        style={[
+                          styles.bookCoverBookmark,
+                          { backgroundColor: previewBook.accentColor },
+                        ]}
+                      />
+                    ) : null}
                     <Animated.View
                       pointerEvents="none"
                       style={[
@@ -1197,6 +1296,66 @@ export default function App() {
                   >
                     ✈️
                   </Animated.Text>
+                </Animated.View>
+              ) : null}
+
+              {professionHeroItem ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.professionHeroOverlay,
+                    {
+                      opacity: professionHeroOpacity,
+                    },
+                  ]}
+                >
+                  <Animated.View
+                    style={[
+                      styles.professionHeroBadge,
+                      {
+                        backgroundColor: `${professionHeroItem.color}dd`,
+                        transform: [
+                          {
+                            scale: professionHeroProgress.interpolate({
+                              inputRange: [0, 0.35, 1],
+                              outputRange: [0.75, 1.08, 1],
+                            }),
+                          },
+                          {
+                            translateY: professionHeroProgress.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [26, -10, -2],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <Animated.Text
+                      style={[
+                        styles.professionHeroSparkle,
+                        {
+                          opacity: professionHeroOpacity.interpolate({
+                            inputRange: [0, 0.15, 1],
+                            outputRange: [0, 0.95, 0],
+                          }),
+                          transform: [
+                            {
+                              translateY: professionHeroProgress.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [10, -18],
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      ✨ ✨
+                    </Animated.Text>
+                    <Text style={styles.professionHeroLabel}>{professionHeroItem.label}</Text>
+                    <Text style={styles.professionHeroEmoji}>{professionHeroItem.emoji}</Text>
+                    <Text style={styles.professionHeroHint}>Hallo!</Text>
+                  </Animated.View>
                 </Animated.View>
               ) : null}
 
@@ -1616,88 +1775,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#a6c792",
   },
-  bookAccentRoadSign: {
+  bookAccentShape: {
     position: "absolute",
-    right: 62,
-    bottom: 154,
-    width: 24,
-    height: 74,
-    borderRadius: 999,
-    backgroundColor: "rgba(91, 110, 126, 0.24)",
   },
-  bookAccentTransportEmoji: {
+  bookAccentEmoji: {
     position: "absolute",
-    right: 44,
-    bottom: 204,
-    fontSize: 20,
-    opacity: 0.78,
-  },
-  bookAccentTransportTrail: {
-    position: "absolute",
-    left: 54,
-    top: 122,
-    fontSize: 22,
-    color: "rgba(255,255,255,0.7)",
-    letterSpacing: 2,
-  },
-  bookAccentBadgeLeft: {
-    position: "absolute",
-    left: 40,
-    bottom: 168,
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: "rgba(122, 168, 255, 0.18)",
-  },
-  bookAccentBadgeRight: {
-    position: "absolute",
-    right: 46,
-    top: 212,
-    width: 48,
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 194, 136, 0.18)",
-  },
-  bookAccentProfessionOne: {
-    position: "absolute",
-    left: 52,
-    bottom: 180,
-    fontSize: 24,
-    opacity: 0.82,
-  },
-  bookAccentProfessionTwo: {
-    position: "absolute",
-    right: 58,
-    top: 224,
-    fontSize: 22,
-    opacity: 0.82,
-  },
-  bookAccentDotOne: {
-    position: "absolute",
-    left: 42,
-    top: 196,
-    width: 14,
-    height: 14,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 164, 189, 0.36)",
-  },
-  bookAccentDotTwo: {
-    position: "absolute",
-    right: 64,
-    top: 146,
-    width: 12,
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: "rgba(134, 201, 255, 0.4)",
-  },
-  bookAccentDotThree: {
-    position: "absolute",
-    right: 108,
-    bottom: 186,
-    width: 16,
-    height: 16,
-    borderRadius: 999,
-    backgroundColor: "rgba(182, 144, 255, 0.28)",
   },
   title: {
     textAlign: "center",
@@ -1779,6 +1861,15 @@ const styles = StyleSheet.create({
   },
   bookCoverCardActive: {
     transform: [{ scale: 1.02 }],
+  },
+  bookCoverBookmark: {
+    position: "absolute",
+    top: -2,
+    right: 22,
+    width: 22,
+    height: 34,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
   },
   bookCoverSheen: {
     position: "absolute",
@@ -1974,6 +2065,43 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.64)",
+  },
+  professionHeroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 53,
+    elevation: 53,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(245, 247, 255, 0.26)",
+  },
+  professionHeroBadge: {
+    minWidth: 220,
+    minHeight: 220,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    ...createSurfaceShadow("#8ea2bf", 0.16, 14, 7, 4),
+  },
+  professionHeroSparkle: {
+    position: "absolute",
+    top: 30,
+    fontSize: 26,
+  },
+  professionHeroLabel: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#495b6b",
+  },
+  professionHeroEmoji: {
+    marginTop: 8,
+    fontSize: 82,
+  },
+  professionHeroHint: {
+    marginTop: 6,
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#5d6f81",
   },
   cloudOne: {
     position: "absolute",
