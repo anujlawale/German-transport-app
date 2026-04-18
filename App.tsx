@@ -111,6 +111,7 @@ export default function App() {
   const [targetItemId, setTargetItemId] = useState<ItemId | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
   const [isAirplaneHeroVisible, setIsAirplaneHeroVisible] = useState(false);
+  const [bookTurnDirection, setBookTurnDirection] = useState<1 | -1>(1);
   const [tapTokens, setTapTokens] = useState<ItemTokenMap>(() => createItemTokenMap());
   const [celebrationTokens, setCelebrationTokens] = useState<ItemTokenMap>(() =>
     createItemTokenMap(),
@@ -120,6 +121,9 @@ export default function App() {
   );
   const sparkleScale = useRef(new Animated.Value(0)).current;
   const sparkleOpacity = useRef(new Animated.Value(0)).current;
+  const bookCoverTurn = useRef(new Animated.Value(0)).current;
+  const bookCoverLift = useRef(new Animated.Value(0)).current;
+  const bookCoverSheen = useRef(new Animated.Value(0)).current;
   const airplaneHeroProgress = useRef(new Animated.Value(0)).current;
   const airplaneHeroOpacity = useRef(new Animated.Value(0)).current;
   const birdDriftOne = useRef(new Animated.Value(0)).current;
@@ -136,18 +140,18 @@ export default function App() {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
     const desiredGap = Math.max(8, Math.min(18, Math.floor(safeWidth * 0.03)));
-    const vehicleSize = Math.min(
+    const cardSize = Math.min(
       164,
       Math.max(108, Math.floor((safeWidth - 28 - desiredGap * 2) / 3)),
     );
-    const vehicleRowY = Math.max(290, Math.min(360, safeHeight * 0.46));
-    const gap = Math.max(6, Math.floor((safeWidth - 28 - vehicleSize * 3) / 2));
+    const cardRowY = Math.max(290, Math.min(360, safeHeight * 0.46));
+    const gap = Math.max(6, Math.floor((safeWidth - 28 - cardSize * 3) / 2));
 
     return {
       safeWidth,
       safeHeight,
-      vehicleSize,
-      vehicleRowY,
+      cardSize,
+      cardRowY,
       gap,
       bookChooserWidth: Math.min(250, safeWidth - 96),
     };
@@ -155,9 +159,9 @@ export default function App() {
 
   const homes = useMemo<ItemHomeMap>(() => {
     const slots = [
-      { x: 14, y: layout.vehicleRowY + 10 },
-      { x: 14 + layout.vehicleSize + layout.gap, y: layout.vehicleRowY - 10 },
-      { x: layout.safeWidth - layout.vehicleSize - 14, y: layout.vehicleRowY + 6 },
+      { x: 14, y: layout.cardRowY + 10 },
+      { x: 14 + layout.cardSize + layout.gap, y: layout.cardRowY - 10 },
+      { x: layout.safeWidth - layout.cardSize - 14, y: layout.cardRowY + 6 },
     ];
     const nextHomes: ItemHomeMap = {};
 
@@ -638,9 +642,56 @@ export default function App() {
   }
 
   function cycleBook(direction: "left" | "right") {
-    setPreviewBookIndex((current) => {
-      const delta = direction === "left" ? -1 : 1;
-      return (current + delta + PICTURE_BOOKS.length) % PICTURE_BOOKS.length;
+    const delta: 1 | -1 = direction === "left" ? -1 : 1;
+    setBookTurnDirection(delta);
+    bookCoverTurn.stopAnimation();
+    bookCoverLift.stopAnimation();
+    bookCoverSheen.stopAnimation();
+    bookCoverTurn.setValue(0);
+    bookCoverLift.setValue(0);
+    bookCoverSheen.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(bookCoverTurn, {
+        toValue: 1,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bookCoverLift, {
+        toValue: 1,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bookCoverSheen, {
+        toValue: 1,
+        duration: 90,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (!finished) {
+        return;
+      }
+
+      setPreviewBookIndex((current) => (current + delta + PICTURE_BOOKS.length) % PICTURE_BOOKS.length);
+
+      Animated.parallel([
+        Animated.timing(bookCoverTurn, {
+          toValue: 0,
+          duration: 170,
+          useNativeDriver: true,
+        }),
+        Animated.spring(bookCoverLift, {
+          toValue: 0,
+          useNativeDriver: true,
+          speed: 16,
+          bounciness: 7,
+        }),
+        Animated.timing(bookCoverSheen, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
     });
   }
 
@@ -742,6 +793,28 @@ export default function App() {
           ))}
 
           <View pointerEvents="none" style={styles.backgroundScene}>
+            {activeBookId === "transport" ? (
+              <>
+                <View style={styles.bookAccentRoadSign} />
+                <Text style={styles.bookAccentTransportEmoji}>🛣️</Text>
+                <Text style={styles.bookAccentTransportTrail}>⋯⋯</Text>
+              </>
+            ) : null}
+            {activeBookId === "profession" ? (
+              <>
+                <View style={styles.bookAccentBadgeLeft} />
+                <View style={styles.bookAccentBadgeRight} />
+                <Text style={styles.bookAccentProfessionOne}>🩺</Text>
+                <Text style={styles.bookAccentProfessionTwo}>🧰</Text>
+              </>
+            ) : null}
+            {activeBookId === "mixed" ? (
+              <>
+                <View style={styles.bookAccentDotOne} />
+                <View style={styles.bookAccentDotTwo} />
+                <View style={styles.bookAccentDotThree} />
+              </>
+            ) : null}
             <View style={styles.hillBack} />
             <View style={styles.hillFrontLeft} />
             <View style={styles.hillFrontRight} />
@@ -893,32 +966,81 @@ export default function App() {
                   <Text style={styles.bookArrowText}>‹</Text>
                 </Pressable>
 
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={activatePreviewBook}
-                  style={[
-                    styles.bookCoverCard,
-                    {
-                      width: layout.bookChooserWidth,
-                      backgroundColor: previewBook.color,
-                      borderColor: previewBook.accentColor,
-                    },
-                    activeBookId === previewBook.id ? styles.bookCoverCardActive : null,
-                  ]}
+                <Animated.View
+                  style={{
+                    transform: [
+                      {
+                        translateY: bookCoverLift.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -4],
+                        }),
+                      },
+                      {
+                        translateX: bookCoverTurn.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 12 * bookTurnDirection],
+                        }),
+                      },
+                      {
+                        rotate: bookCoverTurn.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["0deg", `${-8 * bookTurnDirection}deg`],
+                        }),
+                      },
+                      {
+                        scale: bookCoverTurn.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 0.96],
+                        }),
+                      },
+                    ],
+                  }}
                 >
-                  <View
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={activatePreviewBook}
                     style={[
-                      styles.bookCoverSpine,
-                      { backgroundColor: previewBook.accentColor },
+                      styles.bookCoverCard,
+                      {
+                        width: layout.bookChooserWidth,
+                        backgroundColor: previewBook.color,
+                        borderColor: previewBook.accentColor,
+                      },
+                      activeBookId === previewBook.id ? styles.bookCoverCardActive : null,
                     ]}
-                  />
-                  <Text style={styles.bookEmoji}>{previewBook.emoji}</Text>
-                  <Text style={styles.bookLabel}>{previewBook.label}</Text>
-                  <Text style={styles.bookDescription}>{previewBook.description}</Text>
-                  <Text style={styles.bookHint}>
-                    {activeBookId === previewBook.id ? "Offenes Buch" : "Zum Öffnen tippen"}
-                  </Text>
-                </Pressable>
+                  >
+                    <View
+                      style={[
+                        styles.bookCoverSpine,
+                        { backgroundColor: previewBook.accentColor },
+                      ]}
+                    />
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[
+                        styles.bookCoverSheen,
+                        {
+                          opacity: bookCoverSheen,
+                          transform: [
+                            {
+                              translateX: bookCoverSheen.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [-70, 70],
+                              }),
+                            },
+                            { rotate: "-14deg" },
+                          ],
+                        },
+                      ]}
+                    />
+                    <Text style={styles.bookEmoji}>{previewBook.emoji}</Text>
+                    <Text style={styles.bookLabel}>{previewBook.label}</Text>
+                    <Text style={styles.bookDescription}>{previewBook.description}</Text>
+                    <Text style={styles.bookHint}>
+                      {activeBookId === previewBook.id ? "Offenes Buch" : "Zum Öffnen tippen"}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
 
                 <Pressable
                   accessibilityRole="button"
@@ -1115,7 +1237,7 @@ export default function App() {
                     key={item.id}
                     item={item}
                     home={homes[item.id]}
-                    cardSize={layout.vehicleSize}
+                    cardSize={layout.cardSize}
                     slotIndex={index}
                     interactionEnabled={!isFindGameModalVisible}
                     tapAnimationToken={tapTokens[item.id] ?? 0}
@@ -1494,6 +1616,89 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#a6c792",
   },
+  bookAccentRoadSign: {
+    position: "absolute",
+    right: 62,
+    bottom: 154,
+    width: 24,
+    height: 74,
+    borderRadius: 999,
+    backgroundColor: "rgba(91, 110, 126, 0.24)",
+  },
+  bookAccentTransportEmoji: {
+    position: "absolute",
+    right: 44,
+    bottom: 204,
+    fontSize: 20,
+    opacity: 0.78,
+  },
+  bookAccentTransportTrail: {
+    position: "absolute",
+    left: 54,
+    top: 122,
+    fontSize: 22,
+    color: "rgba(255,255,255,0.7)",
+    letterSpacing: 2,
+  },
+  bookAccentBadgeLeft: {
+    position: "absolute",
+    left: 40,
+    bottom: 168,
+    width: 52,
+    height: 52,
+    borderRadius: 999,
+    backgroundColor: "rgba(122, 168, 255, 0.18)",
+  },
+  bookAccentBadgeRight: {
+    position: "absolute",
+    right: 46,
+    top: 212,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 194, 136, 0.18)",
+  },
+  bookAccentProfessionOne: {
+    position: "absolute",
+    left: 52,
+    bottom: 180,
+    fontSize: 24,
+    opacity: 0.82,
+  },
+  bookAccentProfessionTwo: {
+    position: "absolute",
+    right: 58,
+    top: 224,
+    fontSize: 22,
+    opacity: 0.82,
+  },
+  bookAccentDotOne: {
+    position: "absolute",
+    left: 42,
+    top: 196,
+    width: 14,
+    height: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 164, 189, 0.36)",
+  },
+  bookAccentDotTwo: {
+    position: "absolute",
+    right: 64,
+    top: 146,
+    width: 12,
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: "rgba(134, 201, 255, 0.4)",
+  },
+  bookAccentDotThree: {
+    position: "absolute",
+    right: 108,
+    bottom: 186,
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: "rgba(182, 144, 255, 0.28)",
+  },
   title: {
     textAlign: "center",
     fontSize: 28,
@@ -1574,6 +1779,13 @@ const styles = StyleSheet.create({
   },
   bookCoverCardActive: {
     transform: [{ scale: 1.02 }],
+  },
+  bookCoverSheen: {
+    position: "absolute",
+    top: -12,
+    bottom: -12,
+    width: 44,
+    backgroundColor: "rgba(255,255,255,0.3)",
   },
   bookCoverSpine: {
     position: "absolute",
