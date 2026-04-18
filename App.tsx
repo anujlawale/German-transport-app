@@ -13,7 +13,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { FindGameModal } from "./src/components/FindGameModal";
 import { ItemCard } from "./src/components/ItemCard";
 import { SceneWordButton } from "./src/components/SceneWordButton";
-import { getItemsForBook, ITEMS, PICTURE_BOOKS } from "./src/data/items";
+import { getItemsForBook, getPictureBookById, ITEMS, PICTURE_BOOKS } from "./src/data/items";
 import { setSpeechEnabled, speakGerman, stopGermanSpeech } from "./src/utils/audio";
 import {
   clearInteractionQueue,
@@ -184,8 +184,7 @@ export default function App() {
     ? SCENE_ITEMS.filter((item) => item.id !== "station" && item.id !== "airport")
     : SCENE_ITEMS;
   const previewBook = PICTURE_BOOKS[previewBookIndex] ?? PICTURE_BOOKS[0];
-  const activeBook =
-    PICTURE_BOOKS.find((book) => book.id === activeBookId) ?? PICTURE_BOOKS[0];
+  const activeBook = getPictureBookById(activeBookId) ?? PICTURE_BOOKS[0];
 
   useEffect(() => {
     void initializeSoundEffects();
@@ -511,8 +510,7 @@ export default function App() {
   }
 
   function getDefaultWowMomentForItem(item: ItemDefinition) {
-    const itemBook = PICTURE_BOOKS.find((book) => book.id === item.category);
-    return itemBook?.defaultWowMoment ?? null;
+    return getPictureBookById(item.bookId)?.defaultWowMoment ?? null;
   }
 
   function playWowMoment(item: ItemDefinition, wowMoment: WowMomentDefinition) {

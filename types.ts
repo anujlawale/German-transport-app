@@ -1,10 +1,9 @@
 export type ItemId = string;
 
-export type ZoneId = "sky" | "road" | "track";
-export type ItemCategory = "transport" | "profession";
+export type PictureBookId = "transport" | "profession";
 export type ItemAnimationStyle = "road" | "sky" | "track" | "water" | "character";
 export type ItemSoundEffect = "bus" | "plane" | "train";
-export type BookId = ItemCategory | "mixed";
+export type BookId = PictureBookId | "mixed";
 
 export type DifficultyLevel = "easy" | "medium" | "advanced";
 
@@ -17,7 +16,7 @@ export type ItemDefinition = {
   advancedPrompts?: string[];
   phrase: string;
   color: string;
-  category: ItemCategory;
+  bookId: PictureBookId;
   animationStyle: ItemAnimationStyle;
   soundEffect: ItemSoundEffect;
   wowMoment?: WowMomentDefinition;

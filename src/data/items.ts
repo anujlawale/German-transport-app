@@ -2,9 +2,9 @@ import {
   BookId,
   BookSceneAccent,
   ItemAnimationStyle,
-  ItemCategory,
   ItemDefinition,
   PictureBookDefinition,
+  PictureBookId,
   ItemSoundEffect,
   WowMomentDefinition,
 } from "../../types";
@@ -16,7 +16,7 @@ type ItemSeed = {
   article: string;
   color: string;
   phrase: string;
-  category: ItemCategory;
+  bookId: PictureBookId;
   animationStyle: ItemAnimationStyle;
   soundEffect: ItemSoundEffect;
   advancedPrompts?: string[];
@@ -31,7 +31,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "fährt durch die Stadt",
     color: "#d64d47",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -42,7 +42,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "saust flink los",
     color: "#e35c53",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -53,7 +53,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "holt Menschen ab",
     color: "#ffd55c",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -64,7 +64,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "passt auf uns auf",
     color: "#8cbcff",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -75,7 +75,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "hilft ganz schnell",
     color: "#df594f",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -86,7 +86,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "rollt leise",
     color: "#c74b4a",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -97,7 +97,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Die",
     phrase: "fährt lustig durch die Stadt",
     color: "#ffb74d",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -108,7 +108,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "hat zwei Etagen",
     color: "#ff866b",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -119,7 +119,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "saust flink los",
     color: "#f3efef",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -130,7 +130,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "brummt laut",
     color: "#ec8c3f",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -141,7 +141,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "bringt viele Sachen",
     color: "#d7bc43",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -152,7 +152,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "hilft ganz schnell",
     color: "#f4f5f7",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -163,7 +163,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "gräbt die Erde um",
     color: "#ffd166",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -174,7 +174,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "trägt viele Steine",
     color: "#d1b541",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -185,7 +185,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "bringt große Kisten",
     color: "#efe3a6",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -196,7 +196,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "dreht den Beton",
     color: "#9dc7ff",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -207,7 +207,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "arbeitet auf dem Feld",
     color: "#ccb13c",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "road",
     soundEffect: "bus",
   },
@@ -218,7 +218,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "fliegt im Himmel",
     color: "#dbeaf8",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
     wowMoment: {
@@ -235,7 +235,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "schwebt ganz ruhig",
     color: "#f2a552",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
     wowMoment: {
@@ -252,7 +252,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "summt in der Luft",
     color: "#e76a67",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
     wowMoment: {
@@ -269,7 +269,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Die",
     phrase: "fliegt hoch hinaus",
     color: "#b08cff",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
     wowMoment: {
@@ -286,7 +286,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "fliegt weit im All",
     color: "#d8e2ec",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
     wowMoment: {
@@ -303,7 +303,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "schwebt langsam",
     color: "#cf8bf6",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
     wowMoment: {
@@ -320,7 +320,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "glitzert am Himmel",
     color: "#7ee0ff",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
   },
@@ -331,7 +331,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "schwebt herunter",
     color: "#ffb86b",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "sky",
     soundEffect: "plane",
   },
@@ -342,7 +342,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "fährt auf der Schiene",
     color: "#8ca8c5",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "track",
     soundEffect: "train",
   },
@@ -353,7 +353,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Die",
     phrase: "fährt durch die Stadt",
     color: "#ff9671",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "track",
     soundEffect: "train",
   },
@@ -364,7 +364,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Die",
     phrase: "fährt unter der Erde",
     color: "#6aa9ff",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "track",
     soundEffect: "train",
   },
@@ -375,7 +375,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Die",
     phrase: "zieht viele Wagen",
     color: "#6d5bd0",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "track",
     soundEffect: "train",
   },
@@ -386,7 +386,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Die",
     phrase: "gleitet auf der Schiene",
     color: "#6fd08c",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "track",
     soundEffect: "train",
   },
@@ -397,7 +397,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "saust sehr schnell",
     color: "#ff7f7f",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "track",
     soundEffect: "train",
   },
@@ -408,7 +408,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "fährt über das Wasser",
     color: "#67b2f2",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "water",
     soundEffect: "bus",
   },
@@ -419,7 +419,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "fährt über das Meer",
     color: "#9e7b5d",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "water",
     soundEffect: "bus",
   },
@@ -430,7 +430,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "gleitet über das Wasser",
     color: "#9ddff4",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "water",
     soundEffect: "bus",
   },
@@ -441,7 +441,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Das",
     phrase: "taucht tief hinunter",
     color: "#7a8188",
-    category: "transport",
+    bookId: "transport",
     animationStyle: "water",
     soundEffect: "bus",
   },
@@ -452,7 +452,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "hilft kranken Menschen",
     color: "#90caf9",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "bus",
     advancedPrompts: ["Wo ist der arzt?", "Tippe auf den arzt.", "Wer hilft uns?"],
@@ -464,7 +464,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "passt gut auf",
     color: "#8cbcff",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "bus",
     advancedPrompts: [
@@ -480,7 +480,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "löscht das Feuer",
     color: "#ff8a80",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "bus",
     advancedPrompts: [
@@ -496,7 +496,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "zeigt uns neue Dinge",
     color: "#ffd54f",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "bus",
     advancedPrompts: ["Wo ist der lehrer?", "Tippe auf den lehrer.", "Wer zeigt uns etwas?"],
@@ -508,7 +508,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "macht leckeres Essen",
     color: "#ffab91",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "bus",
     advancedPrompts: ["Wo ist der koch?", "Tippe auf den koch.", "Wer kocht das Essen?"],
@@ -520,7 +520,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "fliegt das Flugzeug",
     color: "#a5d6ff",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "plane",
     advancedPrompts: ["Wo ist der pilot?", "Tippe auf den piloten.", "Wer fliegt das Flugzeug?"],
@@ -532,7 +532,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "arbeitet auf dem Feld",
     color: "#a5d66f",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "bus",
     advancedPrompts: ["Wo ist der bauer?", "Tippe auf den bauern.", "Wer arbeitet auf dem Feld?"],
@@ -544,7 +544,7 @@ const ITEM_SEEDS: ItemSeed[] = [
     article: "Der",
     phrase: "baut ein Haus",
     color: "#ffcc80",
-    category: "profession",
+    bookId: "profession",
     animationStyle: "character",
     soundEffect: "bus",
     advancedPrompts: [
@@ -696,7 +696,11 @@ export function getItemsForBook(bookId: BookId) {
     return ITEMS;
   }
 
-  return ITEMS.filter((item) => item.category === bookId);
+  return ITEMS.filter((item) => item.bookId === bookId);
+}
+
+export function getPictureBookById(bookId: BookId) {
+  return PICTURE_BOOKS.find((book) => book.id === bookId) ?? null;
 }
 
 function createItemDefinition(item: ItemSeed): ItemDefinition {
@@ -712,19 +716,19 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
       item.advancedPrompts ?? [
         `Wo ist ${speechName.toLowerCase()}?`,
         `Tippe auf ${speechName.toLowerCase()}.`,
-        getCategoryPrompt(item.category, item.animationStyle),
+        getPromptHint(item.bookId, item.animationStyle),
       ],
     phrase: `${speechName} ${item.phrase}`,
     color: item.color,
-    category: item.category,
+    bookId: item.bookId,
     animationStyle: item.animationStyle,
     soundEffect: item.soundEffect,
     wowMoment: item.wowMoment,
   };
 }
 
-function getCategoryPrompt(category: ItemCategory, animationStyle: ItemAnimationStyle) {
-  if (category === "profession") {
+function getPromptHint(bookId: PictureBookId, animationStyle: ItemAnimationStyle) {
+  if (bookId === "profession") {
     return "Wer arbeitet hier?";
   }
 
