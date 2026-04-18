@@ -713,8 +713,6 @@ const ITEM_SEEDS: ItemSeed[] = [
   },
 ];
 
-export const ITEMS: ItemDefinition[] = ITEM_SEEDS.map((item) => createItemDefinition(item));
-
 const transportSceneAccents: BookSceneAccent[] = [
   {
     kind: "shape",
@@ -851,6 +849,8 @@ export const PICTURE_BOOKS: PictureBookDefinition[] = [
     sceneAccents: mixedSceneAccents,
   },
 ];
+
+export const ITEMS: ItemDefinition[] = ITEM_SEEDS.map((item) => createItemDefinition(item));
 
 export function getItemsForBook(bookId: BookId) {
   if (bookId === "mixed") {
