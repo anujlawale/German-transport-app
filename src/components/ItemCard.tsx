@@ -20,51 +20,50 @@ import {
 type ItemCardProps = {
   item: ItemDefinition;
   home: Point;
-  cardSize: number;
+  cardWidth: number;
+  cardHeight: number;
   slotIndex: number;
   interactionEnabled: boolean;
   tapAnimationToken: number;
   celebrationToken: number;
   wrongTapToken: number;
   onTap: (item: ItemDefinition) => void;
+  onLongPress?: (item: ItemDefinition) => void;
 };
 
 const IDLE_FLOAT_UP_DURATION_MS = 1200;
 const IDLE_FLOAT_DOWN_DURATION_MS = 1200;
-const IDLE_WIGGLE_STEP_DURATION_MS = 1400;
 
 const CARD_LAYER_STYLE = { zIndex: 120, elevation: 18 } as const;
 
 export function ItemCard({
   item,
   home,
-  cardSize,
-  slotIndex,
+  cardWidth,
+  cardHeight,
+  slotIndex: _slotIndex,
   interactionEnabled,
   tapAnimationToken,
   celebrationToken,
   wrongTapToken,
   onTap,
+  onLongPress,
 }: ItemCardProps) {
   const idleFloat = useRef(new Animated.Value(0)).current;
-  const idleWiggle = useRef(new Animated.Value(0)).current;
   const motion = useRef(createItemMotionValues()).current;
-  const visualWidth = Math.min(cardSize - 20, 122);
-  const visualHeight = Math.min(Math.floor(cardSize * 0.46), 92);
-  const visualTopMargin = item.imageSource ? 12 : 4;
+  const visualWidth = Math.min(cardWidth - 20, 138);
+  const visualHeight = Math.min(Math.floor(cardHeight * 0.58), 124);
+  const imageBottomMargin = item.imageSource ? 8 : 4;
 
   useEffect(() => {
     const floatLoop = createIdleFloatLoop(idleFloat);
-    const wiggleLoop = createIdleWiggleLoop(idleWiggle);
 
     floatLoop.start();
-    wiggleLoop.start();
 
     return () => {
       floatLoop.stop();
-      wiggleLoop.stop();
     };
-  }, [idleFloat, idleWiggle]);
+  }, [idleFloat]);
 
   useEffect(() => {
     if (tapAnimationToken > 0) {
@@ -84,23 +83,10 @@ export function ItemCard({
     }
   }, [wrongTapToken, motion]);
 
-  const baseTilt = getBaseTilt(slotIndex);
   const combinedTransform = [
     { translateY: idleFloat },
-    {
-      rotate: idleWiggle.interpolate({
-        inputRange: [-1, 0, 1],
-        outputRange: [`${baseTilt - 2}deg`, `${baseTilt}deg`, `${baseTilt + 2}deg`],
-      }),
-    },
     { translateX: motion.slideX },
     { translateY: motion.liftY },
-    {
-      rotate: motion.tilt.interpolate({
-        inputRange: [-2, 0, 2],
-        outputRange: ["-8deg", "0deg", "8deg"],
-      }),
-    },
     { scale: motion.bounce },
   ] as const;
 
@@ -108,13 +94,15 @@ export function ItemCard({
     <Pressable
       disabled={!interactionEnabled}
       onPress={() => onTap(item)}
+      onLongPress={onLongPress ? () => onLongPress(item) : undefined}
+      delayLongPress={320}
       style={[
         styles.pressableWrap,
         {
           left: home.x,
           top: home.y,
-          width: cardSize,
-          height: cardSize,
+          width: cardWidth,
+          height: cardHeight,
         },
         CARD_LAYER_STYLE,
       ]}
@@ -124,8 +112,8 @@ export function ItemCard({
         style={[
           styles.card,
           {
-            width: cardSize,
-            height: cardSize,
+            width: cardWidth,
+            height: cardHeight,
             backgroundColor: item.color,
             transform: combinedTransform,
           },
@@ -135,7 +123,12 @@ export function ItemCard({
           <View style={styles.eye} />
           <View style={styles.eye} />
         </View>
-        <View style={[styles.visualWrap, { width: visualWidth, height: visualHeight, marginTop: visualTopMargin }]}>
+        <View
+          style={[
+            styles.visualWrap,
+            { width: visualWidth, height: visualHeight, marginBottom: imageBottomMargin },
+          ]}
+        >
           {item.imageSource ? (
             <Image
               source={item.imageSource}
@@ -155,18 +148,6 @@ export function ItemCard({
   );
 }
 
-function getBaseTilt(slotIndex: number) {
-  if (slotIndex === 0) {
-    return -4;
-  }
-
-  if (slotIndex === 2) {
-    return 3;
-  }
-
-  return 0;
-}
-
 const styles = StyleSheet.create({
   pressableWrap: {
     position: "absolute",
@@ -176,13 +157,14 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.96)",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
+    paddingTop: 20,
+    paddingBottom: 16,
     ...createSurfaceShadow("#7d8795", 0.14, 14, 8, 6),
   },
   faceRow: {
-    position: "absolute",
-    top: 15,
+    marginTop: 2,
     flexDirection: "row",
     gap: 10,
     opacity: 0.72,
@@ -199,13 +181,14 @@ const styles = StyleSheet.create({
   visualWrap: {
     alignItems: "center",
     justifyContent: "center",
+    flexGrow: 1,
   },
   itemImage: {
     maxWidth: "100%",
     maxHeight: "100%",
   },
   badge: {
-    marginTop: 10,
+    marginTop: "auto",
     backgroundColor: "rgba(255,250,245,0.92)",
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -214,12 +197,13 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.94)",
   },
   imageBadge: {
-    marginTop: 6,
+    marginTop: 4,
   },
   badgeText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "900",
     color: "#675c62",
+    textAlign: "center",
   },
   shadowDot: {
     position: "absolute",
@@ -243,31 +227,6 @@ function createIdleFloatLoop(idleFloat: Animated.Value) {
       Animated.timing(idleFloat, {
         toValue: 0,
         duration: IDLE_FLOAT_DOWN_DURATION_MS,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-    ]),
-  );
-}
-
-function createIdleWiggleLoop(idleWiggle: Animated.Value) {
-  return Animated.loop(
-    Animated.sequence([
-      Animated.timing(idleWiggle, {
-        toValue: 1,
-        duration: IDLE_WIGGLE_STEP_DURATION_MS,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(idleWiggle, {
-        toValue: -1,
-        duration: IDLE_WIGGLE_STEP_DURATION_MS,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(idleWiggle, {
-        toValue: 0,
-        duration: IDLE_WIGGLE_STEP_DURATION_MS,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: false,
       }),

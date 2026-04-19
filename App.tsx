@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -117,6 +118,7 @@ export default function App() {
   const [resetTrigger, setResetTrigger] = useState(0);
   const [gamePrompt, setGamePrompt] = useState("Tippe auf Start");
   const [targetItemId, setTargetItemId] = useState<ItemId | null>(null);
+  const [previewedItem, setPreviewedItem] = useState<ItemDefinition | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
   const [bookTurnDirection, setBookTurnDirection] = useState<1 | -1>(1);
   const [tapTokens, setTapTokens] = useState<ItemTokenMap>(() => createItemTokenMap());
@@ -128,6 +130,8 @@ export default function App() {
   );
   const sparkleScale = useRef(new Animated.Value(0)).current;
   const sparkleOpacity = useRef(new Animated.Value(0)).current;
+  const previewScale = useRef(new Animated.Value(0.88)).current;
+  const previewOpacity = useRef(new Animated.Value(0)).current;
   const bookCoverTurn = useRef(new Animated.Value(0)).current;
   const bookCoverLift = useRef(new Animated.Value(0)).current;
   const bookCoverSheen = useRef(new Animated.Value(0)).current;
@@ -143,18 +147,20 @@ export default function App() {
   const layout = useMemo(() => {
     const safeWidth = Math.max(width, 360);
     const safeHeight = Math.max(height, 720);
-    const desiredGap = Math.max(8, Math.min(18, Math.floor(safeWidth * 0.03)));
-    const cardSize = Math.min(
-      164,
-      Math.max(108, Math.floor((safeWidth - 28 - desiredGap * 2) / 3)),
+    const desiredGap = Math.max(8, Math.min(16, Math.floor(safeWidth * 0.028)));
+    const cardWidth = Math.min(
+      150,
+      Math.max(102, Math.floor((safeWidth - 28 - desiredGap * 2) / 3)),
     );
-    const cardRowY = Math.max(290, Math.min(360, safeHeight * 0.46));
-    const gap = Math.max(6, Math.floor((safeWidth - 28 - cardSize * 3) / 2));
+    const cardHeight = Math.min(208, Math.max(144, Math.floor(cardWidth * 1.36)));
+    const cardRowY = Math.max(240, Math.min(322, safeHeight * 0.36));
+    const gap = Math.max(6, Math.floor((safeWidth - 28 - cardWidth * 3) / 2));
 
     return {
       safeWidth,
       safeHeight,
-      cardSize,
+      cardWidth,
+      cardHeight,
       cardRowY,
       gap,
       bookChooserWidth: Math.min(250, safeWidth - 96),
@@ -163,9 +169,9 @@ export default function App() {
 
   const homes = useMemo<ItemHomeMap>(() => {
     const slots = [
-      { x: 14, y: layout.cardRowY + 10 },
-      { x: 14 + layout.cardSize + layout.gap, y: layout.cardRowY - 10 },
-      { x: layout.safeWidth - layout.cardSize - 14, y: layout.cardRowY + 6 },
+      { x: 14, y: layout.cardRowY + 14 },
+      { x: 14 + layout.cardWidth + layout.gap, y: layout.cardRowY - 6 },
+      { x: layout.safeWidth - layout.cardWidth - 14, y: layout.cardRowY + 10 },
     ];
     const nextHomes: ItemHomeMap = {};
 
@@ -374,6 +380,31 @@ export default function App() {
       soundDelayMs: INTERACTION_TIMING.tap.soundDelayMs,
       speechDelayMs: INTERACTION_TIMING.tap.speechDelayMs,
     });
+  }
+
+  function handleItemLongPress(item: ItemDefinition) {
+    if (isFindGameModalVisible || showParentSettings || isGameMode) {
+      return;
+    }
+
+    previewScale.setValue(0.88);
+    previewOpacity.setValue(0);
+    setPreviewedItem(item);
+    clearInteractionQueue();
+    void speakGerman(item.speechName);
+    Animated.parallel([
+      Animated.spring(previewScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 10,
+        bounciness: 10,
+      }),
+      Animated.timing(previewOpacity, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }
 
   async function handleGameTap(item: ItemDefinition) {
@@ -822,7 +853,12 @@ export default function App() {
                   <View style={styles.cloudPuffRight} />
                 </>
               ) : null}
-              {item.style === "sun" ? <View style={styles.sunInner} /> : null}
+              {item.style === "sun" ? (
+                <>
+                  <View style={styles.sunAura} />
+                  <View style={styles.sunInner} />
+                </>
+              ) : null}
               {item.style === "station" ? (
                 <>
                   <Text style={styles.sceneEmoji}>🚉</Text>
@@ -945,12 +981,6 @@ export default function App() {
 
           {!showParentSettings ? (
             <>
-              <View style={[styles.headerWrap, isCompactPhone ? styles.headerWrapCompact : null]}>
-                <Text style={[styles.title, isCompactPhone ? styles.titleCompact : null]}>
-                  Unsere Reise
-                </Text>
-              </View>
-
               <View style={[styles.modeArea, isCompactPhone ? styles.modeAreaCompact : null]}>
                 <View style={[styles.modeRow, isCompactPhone ? styles.modeRowCompact : null]}>
                   <View style={[styles.modeGroup, isCompactPhone ? styles.modeGroupCompact : null]}>
@@ -960,36 +990,6 @@ export default function App() {
                     >
                       <Text style={styles.modeButtonText}>Spielen</Text>
                     </Pressable>
-                    <View style={styles.pageBrowseControls}>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Vorherige Seite"
-                        style={[
-                          styles.pageBrowseArrow,
-                          pageHistoryIndex === 0 || isFindGameModalVisible || isGameMode
-                            ? styles.pageBrowseArrowDisabled
-                            : null,
-                        ]}
-                        onPress={() => browsePage("left")}
-                        disabled={pageHistoryIndex === 0 || isFindGameModalVisible || isGameMode}
-                      >
-                        <Text style={styles.pageBrowseArrowText}>‹</Text>
-                      </Pressable>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Nächste Seite"
-                        style={[
-                          styles.pageBrowseArrow,
-                          isFindGameModalVisible || isGameMode
-                            ? styles.pageBrowseArrowDisabled
-                            : null,
-                        ]}
-                        onPress={() => browsePage("right")}
-                        disabled={isFindGameModalVisible || isGameMode}
-                      >
-                        <Text style={styles.pageBrowseArrowText}>›</Text>
-                      </Pressable>
-                    </View>
                   </View>
                   <Pressable
                     style={[styles.searchButton, isGameMode ? styles.modeButtonActive : null]}
@@ -1092,10 +1092,6 @@ export default function App() {
                     />
                     <Text style={styles.bookEmoji}>{previewBook.emoji}</Text>
                     <Text style={styles.bookLabel}>{previewBook.label}</Text>
-                    <Text style={styles.bookDescription}>{previewBook.description}</Text>
-                    <Text style={styles.bookHint}>
-                      {activeBookId === previewBook.id ? "Offenes Buch" : "Zum Öffnen tippen"}
-                    </Text>
                   </Pressable>
                 </Animated.View>
 
@@ -1181,16 +1177,55 @@ export default function App() {
                     key={item.id}
                     item={item}
                     home={homes[item.id]}
-                    cardSize={layout.cardSize}
+                    cardWidth={layout.cardWidth}
+                    cardHeight={layout.cardHeight}
                     slotIndex={index}
                     interactionEnabled={!isFindGameModalVisible}
                     tapAnimationToken={tapTokens[item.id] ?? 0}
                     celebrationToken={celebrationTokens[item.id] ?? 0}
                     wrongTapToken={wrongTapTokens[item.id] ?? 0}
                     onTap={handleTap}
+                    onLongPress={handleItemLongPress}
                   />
                 ))}
               </Animated.View>
+
+              <View
+                style={[
+                  styles.pageBrowseBar,
+                  {
+                    top: layout.cardRowY + layout.cardHeight + 62,
+                  },
+                ]}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Vorherige Seite"
+                  style={[
+                    styles.pageBrowseArrow,
+                    pageHistoryIndex === 0 || isFindGameModalVisible || isGameMode
+                      ? styles.pageBrowseArrowDisabled
+                      : null,
+                  ]}
+                  onPress={() => browsePage("left")}
+                  disabled={pageHistoryIndex === 0 || isFindGameModalVisible || isGameMode}
+                >
+                  <Text style={styles.pageBrowseArrowText}>‹</Text>
+                </Pressable>
+                <Text style={styles.pageBrowseLabel}>Blättern</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Nächste Seite"
+                  style={[
+                    styles.pageBrowseArrow,
+                    isFindGameModalVisible || isGameMode ? styles.pageBrowseArrowDisabled : null,
+                  ]}
+                  onPress={() => browsePage("right")}
+                  disabled={isFindGameModalVisible || isGameMode}
+                >
+                  <Text style={styles.pageBrowseArrowText}>›</Text>
+                </Pressable>
+              </View>
 
               {isPageTurning ? (
                 <Animated.View
@@ -1245,6 +1280,45 @@ export default function App() {
                 onClose={closeFindGame}
                 onRetry={handleFindGameModalAction}
               />
+
+              {previewedItem ? (
+                <Pressable
+                  style={styles.previewOverlay}
+                  onPress={() => {
+                    setPreviewedItem(null);
+                    previewOpacity.setValue(0);
+                  }}
+                >
+                  <Animated.View
+                    style={[
+                      styles.previewCard,
+                      {
+                        backgroundColor: previewedItem.color,
+                        opacity: previewOpacity,
+                        transform: [{ scale: previewScale }],
+                      },
+                    ]}
+                  >
+                    <Text style={styles.previewHint}>
+                      {previewedItem.speechName.split(" ")[0]}
+                    </Text>
+                    <View style={styles.previewVisualWrap}>
+                      {previewedItem.imageSource ? (
+                        <Image
+                          source={previewedItem.imageSource}
+                          style={styles.previewImage}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Text style={styles.previewEmoji}>{previewedItem.emoji}</Text>
+                      )}
+                    </View>
+                    <View style={styles.previewBadge}>
+                      <Text style={styles.previewLabel}>{previewedItem.label}</Text>
+                    </View>
+                  </Animated.View>
+                </Pressable>
+              ) : null}
             </>
           ) : null}
 
@@ -1454,16 +1528,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  headerWrap: {
-    marginTop: 18,
-    alignItems: "center",
-    paddingHorizontal: 20,
-    zIndex: 12,
-  },
-  headerWrapCompact: {
-    marginTop: 8,
-    paddingHorizontal: 56,
-  },
   backgroundScene: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
@@ -1566,25 +1630,16 @@ const styles = StyleSheet.create({
   bookAccentEmoji: {
     position: "absolute",
   },
-  title: {
-    textAlign: "center",
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#375164",
-  },
-  titleCompact: {
-    fontSize: 24,
-  },
   modeArea: {
-    marginTop: 10,
+    marginTop: 8,
     alignItems: "center",
     zIndex: 12,
   },
   modeAreaCompact: {
-    marginTop: 6,
+    marginTop: 4,
   },
   bookChooserRow: {
-    marginTop: 12,
+    marginTop: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -1593,7 +1648,7 @@ const styles = StyleSheet.create({
     zIndex: 12,
   },
   bookChooserRowCompact: {
-    marginTop: 10,
+    marginTop: 8,
     gap: 8,
     paddingHorizontal: 8,
   },
@@ -1634,12 +1689,12 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   bookCoverCard: {
-    minHeight: 96,
+    minHeight: 84,
     borderRadius: 28,
     borderWidth: 3,
     paddingLeft: 26,
     paddingRight: 18,
-    paddingVertical: 14,
+    paddingVertical: 12,
     justifyContent: "center",
     overflow: "hidden",
     ...createSurfaceShadow("#8393a4", 0.14, 12, 6, 4),
@@ -1679,18 +1734,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#495b6b",
   },
-  bookDescription: {
-    marginTop: 2,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#6f7580",
-  },
-  bookHint: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#7f5d4f",
-  },
   modeButton: {
     minWidth: 108,
     minHeight: 48,
@@ -1717,6 +1760,15 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
+  pageBrowseBar: {
+    position: "absolute",
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    zIndex: 70,
+    elevation: 70,
+  },
   pageBrowseArrow: {
     width: 52,
     height: 48,
@@ -1737,15 +1789,27 @@ const styles = StyleSheet.create({
     color: "#7b6656",
     marginTop: -3,
   },
-  searchButton: {
-    minWidth: 104,
-    minHeight: 56,
-    backgroundColor: "rgba(255,250,244,0.96)",
-    borderRadius: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+  pageBrowseLabel: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#6f6a62",
+    backgroundColor: "rgba(255,250,244,0.88)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.96)",
+    borderColor: "rgba(255,255,255,0.94)",
+    ...createSurfaceShadow("#8a97a8", 0.08, 8, 4, 2),
+  },
+  searchButton: {
+    minWidth: 108,
+    minHeight: 48,
+    backgroundColor: "rgba(255,250,244,0.92)",
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.94)",
     alignItems: "center",
     justifyContent: "center",
     ...createSurfaceShadow("#8a97a8", 0.12, 10, 5, 3),
@@ -1819,8 +1883,8 @@ const styles = StyleSheet.create({
   },
   cloudOne: {
     position: "absolute",
-    top: 68,
-    left: 22,
+    top: 194,
+    left: 104,
     width: 124,
     height: 60,
     justifyContent: "center",
@@ -1829,7 +1893,7 @@ const styles = StyleSheet.create({
   },
   cloudTwo: {
     position: "absolute",
-    top: 96,
+    top: 150,
     right: 28,
     width: 144,
     height: 62,
@@ -1865,22 +1929,29 @@ const styles = StyleSheet.create({
   },
   sun: {
     position: "absolute",
-    top: 56,
-    right: 34,
+    top: 154,
+    left: 18,
     width: 72,
     height: 72,
     borderRadius: 999,
     backgroundColor: "#ffe39d",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 10,
+    zIndex: 11,
     ...createSurfaceShadow("#ffd793", 0.26, 16, 6, 5),
+  },
+  sunAura: {
+    position: "absolute",
+    width: 94,
+    height: 94,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 227, 157, 0.32)",
   },
   sunInner: {
     width: 42,
     height: 42,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.24)",
+    backgroundColor: "rgba(255,255,255,0.3)",
   },
   station: {
     position: "absolute",
@@ -1911,18 +1982,18 @@ const styles = StyleSheet.create({
     ...createSurfaceShadow("#5d7990", 0.12, 10, 5, 3),
   },
   cloudOneCompact: {
-    top: 82,
-    left: 10,
+    top: 206,
+    left: 78,
     width: 110,
   },
   cloudTwoCompact: {
-    top: 112,
+    top: 164,
     right: 10,
     width: 118,
   },
   sunCompact: {
-    top: 74,
-    right: 72,
+    top: 162,
+    left: 14,
   },
   sceneEmoji: {
     fontSize: 28,
@@ -1978,6 +2049,62 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.82)",
+  },
+  previewOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 160,
+    elevation: 160,
+    backgroundColor: "rgba(54, 66, 80, 0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  previewCard: {
+    width: "100%",
+    maxWidth: 340,
+    minHeight: 320,
+    borderRadius: 34,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.96)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    ...createSurfaceShadow("#6e7b87", 0.2, 18, 8, 6),
+  },
+  previewHint: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#6d6972",
+  },
+  previewVisualWrap: {
+    width: "100%",
+    height: 220,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  previewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  previewEmoji: {
+    fontSize: 144,
+  },
+  previewBadge: {
+    backgroundColor: "rgba(255,250,245,0.94)",
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.96)",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  previewLabel: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: "#675c62",
+    textAlign: "center",
   },
   parentOverlay: {
     ...StyleSheet.absoluteFillObject,
