@@ -49,6 +49,9 @@ export function ItemCard({
   const idleFloat = useRef(new Animated.Value(0)).current;
   const idleWiggle = useRef(new Animated.Value(0)).current;
   const motion = useRef(createItemMotionValues()).current;
+  const visualWidth = Math.min(cardSize - 20, 122);
+  const visualHeight = Math.min(Math.floor(cardSize * 0.46), 92);
+  const visualTopMargin = item.imageSource ? 12 : 4;
 
   useEffect(() => {
     const floatLoop = createIdleFloatLoop(idleFloat);
@@ -132,12 +135,18 @@ export function ItemCard({
           <View style={styles.eye} />
           <View style={styles.eye} />
         </View>
-        {item.imageSource ? (
-          <Image source={item.imageSource} style={styles.itemImage} resizeMode="contain" />
-        ) : (
-          <Text style={styles.emoji}>{item.emoji}</Text>
-        )}
-        <View style={styles.badge}>
+        <View style={[styles.visualWrap, { width: visualWidth, height: visualHeight, marginTop: visualTopMargin }]}>
+          {item.imageSource ? (
+            <Image
+              source={item.imageSource}
+              style={[styles.itemImage, { width: visualWidth, height: visualHeight }]}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={styles.emoji}>{item.emoji}</Text>
+          )}
+        </View>
+        <View style={[styles.badge, item.imageSource ? styles.imageBadge : null]}>
           <Text style={styles.badgeText}>{item.label}</Text>
         </View>
         <View style={styles.shadowDot} />
@@ -187,9 +196,13 @@ const styles = StyleSheet.create({
   emoji: {
     fontSize: 52,
   },
+  visualWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   itemImage: {
-    width: 76,
-    height: 76,
+    maxWidth: "100%",
+    maxHeight: "100%",
   },
   badge: {
     marginTop: 10,
@@ -199,6 +212,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.94)",
+  },
+  imageBadge: {
+    marginTop: 6,
   },
   badgeText: {
     fontSize: 20,

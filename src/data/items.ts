@@ -30,6 +30,54 @@ const DEFAULT_PROMPT_HINTS_BY_MOTION_STYLE: Record<ItemMotionStyle, string> = {
   character: "Wer ist das?",
 };
 
+const TRANSPORT_ITEM_IMAGES: Partial<Record<string, ItemDefinition["imageSource"]>> = {
+  bus: require("../../assets/images/vehicles/bus.png"),
+  auto: require("../../assets/images/vehicles/car.png"),
+  oldtimer: require("../../assets/images/vehicles/vintage_car.png"),
+  rennwagen: require("../../assets/images/vehicles/racing_car.png"),
+  pferdekutsche: require("../../assets/images/vehicles/horse_chariot.png"),
+  suv: require("../../assets/images/vehicles/suv.png"),
+  taxi: require("../../assets/images/vehicles/taxi.png"),
+  polizei: require("../../assets/images/vehicles/police.png"),
+  feuerwehr: require("../../assets/images/vehicles/fireengine.png"),
+  fahrrad: require("../../assets/images/vehicles/bicycle.png"),
+  "auto-rikscha": require("../../assets/images/vehicles/auto_rickshaw.png"),
+  doppeldeckerbus: require("../../assets/images/vehicles/double_decker_bus.png"),
+  roller: require("../../assets/images/vehicles/scooter.png"),
+  motorrad: require("../../assets/images/vehicles/motorcycle.png"),
+  van: require("../../assets/images/vehicles/van.png"),
+  krankenwagen: require("../../assets/images/vehicles/ambulance.png"),
+  bagger: require("../../assets/images/vehicles/excavator.png"),
+  kipplaster: require("../../assets/images/vehicles/dump_truck.png"),
+  lastwagen: require("../../assets/images/vehicles/truck.png"),
+  betonmischer: require("../../assets/images/vehicles/concrete_mixer_truck.png"),
+  traktor: require("../../assets/images/vehicles/tractor.png"),
+  strassenwalze: require("../../assets/images/vehicles/road_roller.png"),
+  gabelstapler: require("../../assets/images/vehicles/fork_lift.png"),
+  bulldozer: require("../../assets/images/vehicles/bull_dozer.png"),
+  flugzeug: require("../../assets/images/vehicles/aeroplane.png"),
+  duesenflugzeug: require("../../assets/images/vehicles/jetplane.png"),
+  luftschiff: require("../../assets/images/vehicles/blimp.png"),
+  hubschrauber: require("../../assets/images/vehicles/helicopter.png"),
+  rakete: require("../../assets/images/vehicles/rocket.png"),
+  "space-shuttle": require("../../assets/images/vehicles/space_shuttle.png"),
+  heissluftballon: require("../../assets/images/vehicles/hot_air_balloon.png"),
+  ufo: require("../../assets/images/vehicles/ufo.png"),
+  gleitschirm: require("../../assets/images/vehicles/hang_glider.png"),
+  zug: require("../../assets/images/vehicles/train.png"),
+  strassenbahn: require("../../assets/images/vehicles/tram.png"),
+  "u-bahn": require("../../assets/images/vehicles/metro_train.png"),
+  lok: require("../../assets/images/vehicles/steam_locomotive.png"),
+  monorail: require("../../assets/images/vehicles/monorail.png"),
+  hochgeschwindigkeitszug: require("../../assets/images/vehicles/bullet_train.png"),
+  boot: require("../../assets/images/vehicles/motor_boat.png"),
+  schiff: require("../../assets/images/vehicles/cruise_ship.png"),
+  frachtschiff: require("../../assets/images/vehicles/cargo_ship.png"),
+  yacht: require("../../assets/images/vehicles/yacht.png"),
+  hovercraft: require("../../assets/images/vehicles/hovercraft.png"),
+  "u-boot": require("../../assets/images/vehicles/submarine.png"),
+};
+
 const ITEM_SEEDS: ItemSeed[] = [
   {
     id: "bus",
@@ -1263,6 +1311,9 @@ export function getPictureBookById(bookId: BookId) {
 function createItemDefinition(item: ItemSeed): ItemDefinition {
   const speechName = `${item.article} ${item.label}`;
   const promptHint = getPromptHint(item.bookId, item.motionStyle);
+  const imageSource =
+    item.imageSource ??
+    (item.bookId === "transport" ? TRANSPORT_ITEM_IMAGES[item.id] : undefined);
 
   return {
     id: item.id,
@@ -1281,7 +1332,7 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
     bookId: item.bookId,
     motionStyle: item.motionStyle,
     soundEffect: item.soundEffect,
-    imageSource: item.imageSource,
+    imageSource,
   };
 }
 
