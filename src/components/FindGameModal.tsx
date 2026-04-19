@@ -31,10 +31,10 @@ export function FindGameModal({
         <View style={styles.card}>
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <Text style={styles.title}>Kleine Suchpause</Text>
+              <Text style={styles.title}>Finde!</Text>
             </View>
             <Pressable style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>Schließen</Text>
+              <Text style={styles.closeButtonText}>×</Text>
             </Pressable>
           </View>
 
@@ -119,20 +119,21 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   closeButton: {
-    minWidth: 92,
+    minWidth: 40,
     minHeight: 40,
     borderRadius: 999,
     backgroundColor: "#f5e8d8",
-    paddingHorizontal: 14,
+    paddingHorizontal: 8,
     paddingVertical: 8,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   closeButtonText: {
-    fontSize: 15,
+    fontSize: 24,
     fontWeight: "800",
     color: "#7b6559",
+    lineHeight: 24,
   },
   promptText: {
     marginTop: 20,

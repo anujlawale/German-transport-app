@@ -120,7 +120,7 @@ export default function App() {
   const [isGameMode, setIsGameMode] = useState(false);
   const [isFindGameModalVisible, setIsFindGameModalVisible] = useState(false);
   const [findGameHelperText, setFindGameHelperText] = useState(
-    "Höre zu und tippe danach auf das richtige Bild.",
+    "Hör gut zu.",
   );
   const [findGameActionLabel, setFindGameActionLabel] = useState("Los!");
   const [findRewardProgress, setFindRewardProgress] = useState(0);
@@ -492,7 +492,7 @@ export default function App() {
       },
       extraTwoDelayMs: INTERACTION_TIMING.completion.successDelayMs,
       onExtraTwo: () => {
-        setSuccessMessage(`${praise} ${item.label}`);
+        setSuccessMessage(`${praise} ${item.speechName}`);
       },
     });
   }
@@ -617,7 +617,7 @@ export default function App() {
     setRewardResumeItemId(null);
     void askNextQuestion(undefined, {
       openModal: true,
-      helperText: "Höre zu und tippe dann auf das passende Bild in unserem kleinen Buch.",
+      helperText: "Hör gut zu.",
       actionLabel: "Starten",
     });
   }
@@ -721,7 +721,7 @@ export default function App() {
     actionLabel?: string;
   }) {
     setFindGameHelperText(
-      options?.helperText ?? "Höre zu und tippe danach auf das richtige Bild.",
+      options?.helperText ?? "Hör gut zu.",
     );
     setFindGameActionLabel(options?.actionLabel ?? "Starten");
     setIsFindGameModalVisible(true);
@@ -1197,13 +1197,19 @@ export default function App() {
                 </Pressable>
               </View>
 
-              {isGameMode && !isFindGameModalVisible && !isBalloonRewardVisible ? (
+              {isGameMode &&
+              !isFindGameModalVisible &&
+              !isBalloonRewardVisible &&
+              !successMessage ? (
                 <View pointerEvents="none" style={styles.promptChip}>
                   <Text style={styles.promptChipText}>{gamePrompt}</Text>
                 </View>
               ) : null}
 
-              {isGameMode && !isFindGameModalVisible && !isBalloonRewardVisible ? (
+              {isGameMode &&
+              !isFindGameModalVisible &&
+              !isBalloonRewardVisible &&
+              !successMessage ? (
                 <View pointerEvents="none" style={styles.rewardProgressChip}>
                   <Text style={styles.rewardProgressText}>
                     {`⭐ ${findRewardProgress} / ${FIND_REWARD_GOAL}`}
@@ -1220,10 +1226,7 @@ export default function App() {
               ) : null}
 
               {successMessage ? (
-                <View
-                  pointerEvents="none"
-                  style={[styles.successBubble, { top: 126 }]}
-                >
+                <View pointerEvents="none" style={styles.successBubble}>
                   <Text style={styles.successText}>{successMessage}</Text>
                 </View>
               ) : null}
@@ -1980,8 +1983,8 @@ const styles = StyleSheet.create({
     color: "#9d6d53",
   },
   successBubble: {
-    position: "absolute",
     alignSelf: "center",
+    marginTop: 8,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 999,

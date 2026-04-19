@@ -1,6 +1,13 @@
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 
-type SoundEffectId = "bus" | "plane" | "train" | "success" | "pop";
+type SoundEffectId =
+  | "bus"
+  | "plane"
+  | "train"
+  | "success"
+  | "balloon-pop-1"
+  | "balloon-pop-2"
+  | "balloon-pop-3";
 
 type SoundConfig = {
   asset: number | null;
@@ -24,11 +31,25 @@ const SOUND_CONFIG: Record<SoundEffectId, SoundConfig> = {
     asset: null,
     placeholderPath: "assets/sounds/success-chime.mp3",
   },
-  pop: {
-    asset: null,
-    placeholderPath: "assets/sounds/balloon-pop.mp3",
+  "balloon-pop-1": {
+    asset: require("../../assets/sounds/balloon-pop1.mp3"),
+    placeholderPath: "assets/sounds/balloon-pop1.mp3",
+  },
+  "balloon-pop-2": {
+    asset: require("../../assets/sounds/balloon-pop2.mp3"),
+    placeholderPath: "assets/sounds/balloon-pop2.mp3",
+  },
+  "balloon-pop-3": {
+    asset: require("../../assets/sounds/balloon-pop3.mp3"),
+    placeholderPath: "assets/sounds/balloon-pop3.mp3",
   },
 };
+
+const BALLOON_POP_SOUND_IDS = [
+  "balloon-pop-1",
+  "balloon-pop-2",
+  "balloon-pop-3",
+] as const satisfies readonly SoundEffectId[];
 
 const BACKGROUND_MUSIC_ASSET: number | null = require("../../assets/sounds/background-music.mp3");
 
@@ -78,12 +99,24 @@ export async function playSoundEffect(soundId: SoundEffectId): Promise<void> {
 }
 
 export async function playRewardPopSound(): Promise<void> {
-  if (SOUND_CONFIG.pop.asset) {
-    await playSoundEffect("pop");
+  const availablePopSoundIds = BALLOON_POP_SOUND_IDS.filter((soundId) => SOUND_CONFIG[soundId].asset);
+
+  if (availablePopSoundIds.length > 0) {
+    const randomIndex = Math.floor(Math.random() * availablePopSoundIds.length);
+    const soundId = availablePopSoundIds[randomIndex] ?? availablePopSoundIds[0];
+
+    if (soundId) {
+      await playSoundEffect(soundId);
+      return;
+    }
+  }
+
+  if (SOUND_CONFIG.success.asset) {
+    await playSoundEffect("success");
     return;
   }
 
-  await playSoundEffect("success");
+  warnMissingSoundOnce("success", SOUND_CONFIG.success.placeholderPath);
 }
 
 export function setSoundEnabled(enabled: boolean): void {

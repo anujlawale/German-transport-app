@@ -224,22 +224,28 @@ export function BalloonRewardOverlay({ rewardSource, onComplete }: BalloonReward
         const burstOpacity = getAnimatedValue(burstOpacityValues, balloon.id, 0);
 
         return (
-          <Pressable
+          <Animated.View
             key={balloon.id}
-            accessibilityRole="button"
-            accessibilityLabel="Ballon"
-            onPress={() => handlePop(balloon)}
-            disabled={poppedBalloonIds.includes(balloon.id)}
-            style={StyleSheet.absoluteFill}
+            style={[
+              styles.balloonWrap,
+              {
+                left: balloon.x,
+                width: balloon.size + 26,
+                height: balloon.size + 96,
+                transform: [{ translateY: drift }, { translateX: sway }],
+              },
+            ]}
           >
-            <Animated.View
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ballon"
+              onPress={() => handlePop(balloon)}
+              disabled={poppedBalloonIds.includes(balloon.id)}
               style={[
-                styles.balloonWrap,
+                styles.balloonTouchTarget,
                 {
-                  left: balloon.x,
                   width: balloon.size + 26,
                   height: balloon.size + 96,
-                  transform: [{ translateY: drift }, { translateX: sway }],
                 },
               ]}
             >
@@ -282,17 +288,17 @@ export function BalloonRewardOverlay({ rewardSource, onComplete }: BalloonReward
                   },
                 ]}
               />
-              <Animated.View
-                style={[
-                  styles.balloonString,
+                <Animated.View
+                  style={[
+                    styles.balloonString,
                   {
                     opacity,
                     height: Math.max(44, balloon.size * 0.58),
                   },
                 ]}
               />
-            </Animated.View>
-          </Pressable>
+            </Pressable>
+          </Animated.View>
         );
       })}
 
@@ -319,8 +325,8 @@ function createBalloonConfigs(count: number, safeWidth: number, safeHeight: numb
       startY: safeHeight - 140 + (index % 3) * 54,
       size,
       swayDistance: 10 + (index % 3) * 4,
-      swayDurationMs: 1200 + index * 140,
-      driftDurationMs: 7200 + index * 420,
+      swayDurationMs: 1900 + index * 180,
+      driftDurationMs: 11800 + index * 650,
     };
   });
 }
@@ -392,6 +398,9 @@ const styles = StyleSheet.create({
   },
   balloonWrap: {
     position: "absolute",
+    alignItems: "center",
+  },
+  balloonTouchTarget: {
     alignItems: "center",
   },
   balloonBody: {
