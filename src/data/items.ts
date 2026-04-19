@@ -78,6 +78,32 @@ const TRANSPORT_ITEM_IMAGES: Partial<Record<string, ItemDefinition["imageSource"
   "u-boot": require("../../assets/images/vehicles/submarine.png"),
 };
 
+const PROFESSION_ITEM_IMAGES: Partial<Record<string, ItemDefinition["imageSource"]>> = {
+  arzt: require("../../assets/images/professions/doctor.png"),
+  polizist: require("../../assets/images/professions/police_officer.png"),
+  feuerwehrmann: require("../../assets/images/professions/fire_fighter.png"),
+  lehrer: require("../../assets/images/professions/teacher.png"),
+  koch: require("../../assets/images/professions/chef.png"),
+  pilot: require("../../assets/images/professions/pilot.png"),
+  bauer: require("../../assets/images/professions/farmer.png"),
+  bauarbeiter: require("../../assets/images/professions/builder.png"),
+  baecker: require("../../assets/images/professions/baker.png"),
+  krankenschwester: require("../../assets/images/professions/nurse.png"),
+  musiker: require("../../assets/images/professions/musician.png"),
+  florist: require("../../assets/images/professions/florist.png"),
+  mechaniker: require("../../assets/images/professions/mechanic.png"),
+  klempner: require("../../assets/images/professions/plumber.png"),
+  schreiner: require("../../assets/images/professions/carpenter.png"),
+  astronaut: require("../../assets/images/professions/astronaut.png"),
+  forscher: require("../../assets/images/professions/scientist.png"),
+  architekt: require("../../assets/images/professions/architect.png"),
+  detektiv: require("../../assets/images/professions/detective.png"),
+  fotograf: require("../../assets/images/professions/photographer.png"),
+  soldat: require("../../assets/images/professions/soldier.png"),
+  friseur: require("../../assets/images/professions/hairdresser.png"),
+  paketbote: require("../../assets/images/professions/delivery.png"),
+};
+
 const ITEM_SEEDS: ItemSeed[] = [
   {
     id: "bus",
@@ -1313,7 +1339,11 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
   const promptHint = getPromptHint(item.bookId, item.motionStyle);
   const imageSource =
     item.imageSource ??
-    (item.bookId === "transport" ? TRANSPORT_ITEM_IMAGES[item.id] : undefined);
+    (item.bookId === "transport"
+      ? TRANSPORT_ITEM_IMAGES[item.id]
+      : item.bookId === "profession"
+        ? PROFESSION_ITEM_IMAGES[item.id]
+        : undefined);
 
   return {
     id: item.id,
