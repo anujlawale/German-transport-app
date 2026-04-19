@@ -11,6 +11,10 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import {
+  BalloonRewardOverlay,
+  BalloonRewardSource,
+} from "./src/components/BalloonRewardOverlay";
 import { FindGameModal } from "./src/components/FindGameModal";
 import { ItemCard } from "./src/components/ItemCard";
 import { SceneWordButton } from "./src/components/SceneWordButton";
@@ -88,6 +92,8 @@ const SCENE_ITEMS = [
 ] as const;
 
 const ITEMS_PER_PAGE = 3;
+const FIND_REWARD_GOAL = 5;
+const FREE_PLAY_REWARD_GOAL = 9;
 const INITIAL_VISIBLE_ITEMS = createRandomPageForBook("transport");
 const PRAISE_MESSAGES = [
   "Ja, genau!",
@@ -117,6 +123,10 @@ export default function App() {
     "Höre zu und tippe danach auf das richtige Bild.",
   );
   const [findGameActionLabel, setFindGameActionLabel] = useState("Los!");
+  const [findRewardProgress, setFindRewardProgress] = useState(0);
+  const [freePlayExploreProgress, setFreePlayExploreProgress] = useState(0);
+  const [isBalloonRewardVisible, setIsBalloonRewardVisible] = useState(false);
+  const [balloonRewardSource, setBalloonRewardSource] = useState<BalloonRewardSource | null>(null);
   const [showParentSettings, setShowParentSettings] = useState(false);
   const [speechOn, setSpeechOnState] = useState(true);
   const [soundsOn, setSoundsOnState] = useState(true);
@@ -126,6 +136,7 @@ export default function App() {
   const [gamePrompt, setGamePrompt] = useState("Tippe auf Start");
   const [targetItemId, setTargetItemId] = useState<ItemId | null>(null);
   const [previewedItem, setPreviewedItem] = useState<ItemDefinition | null>(null);
+  const [rewardResumeItemId, setRewardResumeItemId] = useState<ItemId | null>(null);
   const [isPageTurning, setIsPageTurning] = useState(false);
   const [bookTurnDirection, setBookTurnDirection] = useState<1 | -1>(1);
   const [tapTokens, setTapTokens] = useState<ItemTokenMap>(() => createItemTokenMap());
@@ -375,7 +386,7 @@ export default function App() {
   }, [birdDriftOne, birdDriftTwo, flowerBobLeft, flowerBobRight]);
 
   function handleTap(item: ItemDefinition) {
-    if (isFindGameModalVisible) {
+    if (isFindGameModalVisible || isBalloonRewardVisible) {
       return;
     }
 
@@ -384,6 +395,14 @@ export default function App() {
     if (isGameMode) {
       void handleGameTap(item);
       return;
+    }
+
+    const nextExploreProgress = freePlayExploreProgress + 1;
+    if (nextExploreProgress >= FREE_PLAY_REWARD_GOAL) {
+      setFreePlayExploreProgress(FREE_PLAY_REWARD_GOAL);
+      openBalloonReward("freePlay");
+    } else {
+      setFreePlayExploreProgress(nextExploreProgress);
     }
 
     queueTapFeedback({
@@ -395,7 +414,7 @@ export default function App() {
   }
 
   function handleItemLongPress(item: ItemDefinition) {
-    if (isFindGameModalVisible || showParentSettings) {
+    if (isFindGameModalVisible || isBalloonRewardVisible || showParentSettings) {
       return;
     }
 
@@ -436,6 +455,14 @@ export default function App() {
     handleCorrectSelectionFeedback(item);
 
     if (isGameMode) {
+      const nextRewardProgress = findRewardProgress + 1;
+      if (nextRewardProgress >= FIND_REWARD_GOAL) {
+        setFindRewardProgress(FIND_REWARD_GOAL);
+        openBalloonReward("find", item.id);
+        return;
+      }
+
+      setFindRewardProgress(nextRewardProgress);
       if (nextRoundTimeoutRef.current) {
         clearTimeout(nextRoundTimeoutRef.current);
       }
@@ -475,6 +502,17 @@ export default function App() {
     setWrongMessage("Probier ein anderes!");
   }
 
+  function openBalloonReward(source: BalloonRewardSource, previousItemId?: ItemId) {
+    if (nextRoundTimeoutRef.current) {
+      clearTimeout(nextRoundTimeoutRef.current);
+      nextRoundTimeoutRef.current = null;
+    }
+
+    setBalloonRewardSource(source);
+    setRewardResumeItemId(previousItemId ?? null);
+    setIsBalloonRewardVisible(true);
+  }
+
   function handleSceneWordTap(label: string, phrase?: string) {
     if (!isFreePlayMode || isGameMode) {
       return;
@@ -504,6 +542,35 @@ export default function App() {
     setIsFindGameModalVisible(false);
     setGamePrompt("Tippe auf Start");
     setTargetItemId(null);
+    setFindRewardProgress(0);
+    setFreePlayExploreProgress(0);
+    setIsBalloonRewardVisible(false);
+    setBalloonRewardSource(null);
+    setRewardResumeItemId(null);
+  }
+
+  function finishBalloonReward() {
+    const previousItemId = rewardResumeItemId;
+    const rewardSource = balloonRewardSource;
+    setIsBalloonRewardVisible(false);
+    setBalloonRewardSource(null);
+    setRewardResumeItemId(null);
+
+    if (rewardSource === "find") {
+      setFindRewardProgress(0);
+    }
+
+    if (rewardSource === "freePlay") {
+      setFreePlayExploreProgress(0);
+    }
+
+    if (rewardSource === "find" && isGameMode && previousItemId) {
+      void askNextQuestion(previousItemId, {
+        openModal: false,
+        helperText: "Weiter geht's!",
+        actionLabel: "Weiter",
+      });
+    }
   }
 
   function playSparkle() {
@@ -543,6 +610,11 @@ export default function App() {
   function startFindGame() {
     setIsFreePlayMode(false);
     setIsGameMode(true);
+    setFindRewardProgress(0);
+    setFreePlayExploreProgress(0);
+    setIsBalloonRewardVisible(false);
+    setBalloonRewardSource(null);
+    setRewardResumeItemId(null);
     void askNextQuestion(undefined, {
       openModal: true,
       helperText: "Höre zu und tippe dann auf das passende Bild in unserem kleinen Buch.",
@@ -553,6 +625,7 @@ export default function App() {
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
+    setFreePlayExploreProgress(0);
     const nextItems = createRandomPageForBook(activeBookId);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
@@ -565,6 +638,7 @@ export default function App() {
 
   function closeFindGame() {
     setIsFreePlayMode(true);
+    setFreePlayExploreProgress(0);
     const nextItems = createRandomPageForBook(activeBookId);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
@@ -1123,9 +1197,25 @@ export default function App() {
                 </Pressable>
               </View>
 
-              {isGameMode && !isFindGameModalVisible ? (
+              {isGameMode && !isFindGameModalVisible && !isBalloonRewardVisible ? (
                 <View pointerEvents="none" style={styles.promptChip}>
                   <Text style={styles.promptChipText}>{gamePrompt}</Text>
+                </View>
+              ) : null}
+
+              {isGameMode && !isFindGameModalVisible && !isBalloonRewardVisible ? (
+                <View pointerEvents="none" style={styles.rewardProgressChip}>
+                  <Text style={styles.rewardProgressText}>
+                    {`⭐ ${findRewardProgress} / ${FIND_REWARD_GOAL}`}
+                  </Text>
+                </View>
+              ) : null}
+
+              {!isGameMode && !isFindGameModalVisible && !isBalloonRewardVisible ? (
+                <View pointerEvents="none" style={styles.rewardProgressChip}>
+                  <Text style={styles.rewardProgressText}>
+                    {`🎈 ${freePlayExploreProgress} / ${FREE_PLAY_REWARD_GOAL}`}
+                  </Text>
                 </View>
               ) : null}
 
@@ -1199,7 +1289,7 @@ export default function App() {
                     cardWidth={layout.cardWidth}
                     cardHeight={layout.cardHeight}
                     slotIndex={index}
-                    interactionEnabled={!isFindGameModalVisible}
+                    interactionEnabled={!isFindGameModalVisible && !isBalloonRewardVisible}
                     tapAnimationToken={tapTokens[item.id] ?? 0}
                     celebrationToken={celebrationTokens[item.id] ?? 0}
                     wrongTapToken={wrongTapTokens[item.id] ?? 0}
@@ -1301,6 +1391,13 @@ export default function App() {
                 onClose={closeFindGame}
                 onRetry={handleFindGameModalAction}
               />
+
+              {isBalloonRewardVisible ? (
+                <BalloonRewardOverlay
+                  rewardSource={balloonRewardSource ?? "find"}
+                  onComplete={finishBalloonReward}
+                />
+              ) : null}
 
               {previewedItem ? (
                 <Pressable
@@ -1862,6 +1959,25 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#6a6370",
     textAlign: "center",
+  },
+  rewardProgressChip: {
+    position: "absolute",
+    top: 176,
+    right: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 248, 232, 0.96)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.96)",
+    zIndex: 98,
+    elevation: 98,
+    ...createSurfaceShadow("#c7a16d", 0.12, 10, 5, 3),
+  },
+  rewardProgressText: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#9d6d53",
   },
   successBubble: {
     position: "absolute",

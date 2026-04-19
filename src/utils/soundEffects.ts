@@ -1,6 +1,6 @@
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 
-type SoundEffectId = "bus" | "plane" | "train" | "success";
+type SoundEffectId = "bus" | "plane" | "train" | "success" | "pop";
 
 type SoundConfig = {
   asset: number | null;
@@ -23,6 +23,10 @@ const SOUND_CONFIG: Record<SoundEffectId, SoundConfig> = {
   success: {
     asset: null,
     placeholderPath: "assets/sounds/success-chime.mp3",
+  },
+  pop: {
+    asset: null,
+    placeholderPath: "assets/sounds/balloon-pop.mp3",
   },
 };
 
@@ -71,6 +75,15 @@ export async function playSoundEffect(soundId: SoundEffectId): Promise<void> {
   player.seekTo(0);
   player.play();
   activeSoundId = soundId;
+}
+
+export async function playRewardPopSound(): Promise<void> {
+  if (SOUND_CONFIG.pop.asset) {
+    await playSoundEffect("pop");
+    return;
+  }
+
+  await playSoundEffect("success");
 }
 
 export function setSoundEnabled(enabled: boolean): void {
