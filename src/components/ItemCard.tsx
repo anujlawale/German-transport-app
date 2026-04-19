@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import {
   Animated,
   Easing,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -131,7 +132,11 @@ export function ItemCard({
           <View style={styles.eye} />
           <View style={styles.eye} />
         </View>
-        <Text style={styles.emoji}>{item.emoji}</Text>
+        {item.imageSource ? (
+          <Image source={item.imageSource} style={styles.itemImage} resizeMode="contain" />
+        ) : (
+          <Text style={styles.emoji}>{item.emoji}</Text>
+        )}
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{item.label}</Text>
         </View>
@@ -181,6 +186,10 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 52,
+  },
+  itemImage: {
+    width: 76,
+    height: 76,
   },
   badge: {
     marginTop: 10,

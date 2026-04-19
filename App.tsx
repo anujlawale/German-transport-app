@@ -94,6 +94,8 @@ const MUSIC_VOLUME_STEPS = [0, 0.08, 0.14, 0.2, 0.28] as const;
 export default function App() {
   const { width, height } = useWindowDimensions();
   const [visibleItems, setVisibleItems] = useState<ItemDefinition[]>(INITIAL_VISIBLE_ITEMS);
+  const [pageHistory, setPageHistory] = useState<ItemDefinition[][]>([INITIAL_VISIBLE_ITEMS]);
+  const [pageHistoryIndex, setPageHistoryIndex] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
   const [wrongMessage, setWrongMessage] = useState("");
   const [activeBookId, setActiveBookId] = useState<BookId>("transport");
@@ -508,7 +510,10 @@ export default function App() {
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
-    rotatePage((current) => createItemSetForBook(activeBookId, current.map((item) => item.id)));
+    const nextItems = createItemSetForBook(activeBookId, visibleItems.map((item) => item.id));
+    transitionToItems(nextItems);
+    setPageHistory([nextItems]);
+    setPageHistoryIndex(0);
     clearInteractionQueue();
     stopAllSoundEffects();
     void stopGermanSpeech();
@@ -517,12 +522,47 @@ export default function App() {
 
   function closeFindGame() {
     setIsFreePlayMode(true);
-    rotatePage((current) => createItemSetForBook(activeBookId, current.map((item) => item.id)));
+    const nextItems = createItemSetForBook(activeBookId, visibleItems.map((item) => item.id));
+    transitionToItems(nextItems);
+    setPageHistory([nextItems]);
+    setPageHistoryIndex(0);
     clearGameRound();
   }
 
-  function resetItemsToDefault() {
-    rotatePage((current) => createItemSetForBook(activeBookId, current.map((item) => item.id)));
+  function browsePage(direction: "left" | "right") {
+    if (isFindGameModalVisible || isGameMode) {
+      return;
+    }
+
+    if (direction === "left") {
+      if (pageHistoryIndex === 0) {
+        return;
+      }
+
+      const previousIndex = pageHistoryIndex - 1;
+      const previousItems = pageHistory[previousIndex];
+      if (!previousItems) {
+        return;
+      }
+
+      transitionToItems(previousItems);
+      setPageHistoryIndex(previousIndex);
+      return;
+    }
+
+    const nextIndex = pageHistoryIndex + 1;
+    const existingItems = pageHistory[nextIndex];
+
+    if (existingItems) {
+      transitionToItems(existingItems);
+      setPageHistoryIndex(nextIndex);
+      return;
+    }
+
+    const nextItems = createItemSetForBook(activeBookId, visibleItems.map((item) => item.id));
+    transitionToItems(nextItems);
+    setPageHistory((current) => [...current, nextItems]);
+    setPageHistoryIndex(nextIndex);
     setResetTrigger((current) => current + 1);
   }
 
@@ -538,7 +578,9 @@ export default function App() {
     const nextItems = createItemSetForBook(bookId, visibleItems.map((item) => item.id));
     const nextItem = pickTargetItem(nextItems, previousItemId);
     const nextPrompt = getGamePrompt(nextItem);
-    rotatePage(() => nextItems);
+    transitionToItems(nextItems);
+    setPageHistory([nextItems]);
+    setPageHistoryIndex(0);
     setResetTrigger((current) => current + 1);
     setTargetItemId(nextItem.id);
     setGamePrompt(nextPrompt);
@@ -652,7 +694,10 @@ export default function App() {
   function activatePreviewBook() {
     const nextBook = previewBook;
     setActiveBookId(nextBook.id);
-    rotatePage((current) => createItemSetForBook(nextBook.id, current.map((item) => item.id)));
+    const nextItems = createItemSetForBook(nextBook.id, visibleItems.map((item) => item.id));
+    transitionToItems(nextItems);
+    setPageHistory([nextItems]);
+    setPageHistoryIndex(0);
     setResetTrigger((current) => current + 1);
 
     if (isGameMode) {
@@ -670,7 +715,7 @@ export default function App() {
     void speakGerman(`${nextBook.label}. ${nextBook.description}`);
   }
 
-  function rotatePage(nextItemsFactory: (current: ItemDefinition[]) => ItemDefinition[]) {
+  function transitionToItems(nextItems: ItemDefinition[]) {
     setIsPageTurning(true);
     pageTurnProgress.stopAnimation();
     pageTurnProgress.setValue(0);
@@ -695,7 +740,7 @@ export default function App() {
     });
 
     setTimeout(() => {
-      setVisibleItems((current) => nextItemsFactory(current));
+      setVisibleItems(nextItems);
     }, 170);
   }
 
@@ -915,13 +960,36 @@ export default function App() {
                     >
                       <Text style={styles.modeButtonText}>Spielen</Text>
                     </Pressable>
-                    <Pressable
-                      style={styles.shuffleButton}
-                      onPress={resetItemsToDefault}
-                      disabled={isFindGameModalVisible}
-                    >
-                      <Text style={styles.shuffleButtonText}>Neue Seite</Text>
-                    </Pressable>
+                    <View style={styles.pageBrowseControls}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Vorherige Seite"
+                        style={[
+                          styles.pageBrowseArrow,
+                          pageHistoryIndex === 0 || isFindGameModalVisible || isGameMode
+                            ? styles.pageBrowseArrowDisabled
+                            : null,
+                        ]}
+                        onPress={() => browsePage("left")}
+                        disabled={pageHistoryIndex === 0 || isFindGameModalVisible || isGameMode}
+                      >
+                        <Text style={styles.pageBrowseArrowText}>‹</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Nächste Seite"
+                        style={[
+                          styles.pageBrowseArrow,
+                          isFindGameModalVisible || isGameMode
+                            ? styles.pageBrowseArrowDisabled
+                            : null,
+                        ]}
+                        onPress={() => browsePage("right")}
+                        disabled={isFindGameModalVisible || isGameMode}
+                      >
+                        <Text style={styles.pageBrowseArrowText}>›</Text>
+                      </Pressable>
+                    </View>
                   </View>
                   <Pressable
                     style={[styles.searchButton, isGameMode ? styles.modeButtonActive : null]}
@@ -1163,7 +1231,7 @@ export default function App() {
                     },
                   ]}
                 >
-                  <Text style={styles.pageTurnStickerText}>✨ Neue Seite ✨</Text>
+                  <Text style={styles.pageTurnStickerText}>✨ Blättern ✨</Text>
                   <View style={styles.pageTurnCloudLeft} />
                   <View style={styles.pageTurnCloudRight} />
                 </Animated.View>
@@ -1644,24 +1712,30 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#5d5b6d",
   },
-  shuffleButton: {
-    minWidth: 116,
-    minHeight: 48,
+  pageBrowseControls: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  pageBrowseArrow: {
+    width: 52,
+    height: 48,
     borderRadius: 999,
     backgroundColor: "rgba(244,233,214,0.96)",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.95)",
     ...createSurfaceShadow("#928979", 0.1, 9, 4, 2),
   },
-  shuffleButtonText: {
-    fontSize: 15,
+  pageBrowseArrowDisabled: {
+    opacity: 0.45,
+  },
+  pageBrowseArrowText: {
+    fontSize: 30,
     fontWeight: "900",
     color: "#7b6656",
-    textAlign: "center",
+    marginTop: -3,
   },
   searchButton: {
     minWidth: 104,

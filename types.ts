@@ -1,6 +1,8 @@
+import type { ImageSourcePropType } from "react-native";
+
 export type ItemId = string;
 
-export type PictureBookId = "transport" | "profession";
+export type PictureBookId = "transport" | "profession" | "birds";
 export type ItemMotionStyle = "ground" | "air" | "rail" | "water" | "character";
 export type ItemSoundEffect = "bus" | "plane" | "train";
 export type BookId = PictureBookId | "mixed";
@@ -19,6 +21,7 @@ export type ItemDefinition = {
   bookId: PictureBookId;
   motionStyle: ItemMotionStyle;
   soundEffect: ItemSoundEffect;
+  imageSource?: ImageSourcePropType;
 };
 
 export type BookSceneAccent = {
