@@ -2,6 +2,12 @@
 
 Simple Expo React Native app for toddlers to tap and drag a bus, plane, and train into the right zone.
 
+## Vocabulary Reference
+
+The app now includes multiple toddler picture-book categories. A checked-in German/English glossary for the current categories and items lives here:
+
+- [German-English Glossary](./docs/german-english-glossary.md)
+
 ## Config
 
 - Expo SDK: `54.0.6`

@@ -2,6 +2,7 @@ import {
   BookId,
   BookSceneAccent,
   ItemDefinition,
+  ItemId,
   ItemMotionStyle,
   PictureBookDefinition,
   PictureBookId,
@@ -102,6 +103,131 @@ const PROFESSION_ITEM_IMAGES: Partial<Record<string, ItemDefinition["imageSource
   soldat: require("../../assets/images/professions/soldier.png"),
   friseur: require("../../assets/images/professions/hairdresser.png"),
   paketbote: require("../../assets/images/professions/delivery.png"),
+};
+
+const BIRD_ITEM_IMAGES: Partial<Record<string, ItemDefinition["imageSource"]>> = {
+  ente: require("../../assets/images/birds/duck.png"),
+  gans: require("../../assets/images/birds/goose.png"),
+  truthahn: require("../../assets/images/birds/turkey.png"),
+  huhn: require("../../assets/images/birds/hen.png"),
+  papagei: require("../../assets/images/birds/parrot.png"),
+  pfau: require("../../assets/images/birds/peacock.png"),
+  eule: require("../../assets/images/birds/owl.png"),
+  kraehe: require("../../assets/images/birds/crow.png"),
+  spatz: require("../../assets/images/birds/sparrow.png"),
+  taube: require("../../assets/images/birds/pigeon.png"),
+  schwan: require("../../assets/images/birds/swan.png"),
+  pinguin: require("../../assets/images/birds/penguin.png"),
+  specht: require("../../assets/images/birds/woodpecker.png"),
+  eisvogel: require("../../assets/images/birds/kingfisher.png"),
+  strauss: require("../../assets/images/birds/ostrich.png"),
+  kranich: require("../../assets/images/birds/crane.png"),
+  rotkehlchen: require("../../assets/images/birds/robin.png"),
+  kolibri: require("../../assets/images/birds/hummingbird.png"),
+  tukan: require("../../assets/images/birds/toucan.png"),
+  hornvogel: require("../../assets/images/birds/hornbill.png"),
+  adler: require("../../assets/images/birds/eagle.png"),
+  geier: require("../../assets/images/birds/vulture.png"),
+};
+
+export const BOOK_ENGLISH_MEANINGS: Record<BookId, string> = {
+  transport: "Vehicles",
+  profession: "Professions",
+  birds: "Birds",
+  mixed: "Mixed",
+};
+
+export const ITEM_ENGLISH_MEANINGS: Record<ItemId, string> = {
+  bus: "Bus",
+  auto: "Car",
+  oldtimer: "Vintage car",
+  rennwagen: "Race car",
+  pferdekutsche: "Horse carriage",
+  suv: "SUV",
+  taxi: "Taxi",
+  polizei: "Police car",
+  feuerwehr: "Fire engine",
+  fahrrad: "Bicycle",
+  "auto-rikscha": "Auto rickshaw",
+  doppeldeckerbus: "Double-decker bus",
+  roller: "Scooter",
+  motorrad: "Motorcycle",
+  van: "Van",
+  krankenwagen: "Ambulance",
+  bagger: "Excavator",
+  kipplaster: "Dump truck",
+  lastwagen: "Truck",
+  betonmischer: "Concrete mixer truck",
+  traktor: "Tractor",
+  strassenwalze: "Road roller",
+  gabelstapler: "Forklift",
+  bulldozer: "Bulldozer",
+  flugzeug: "Airplane",
+  duesenflugzeug: "Jet plane",
+  luftschiff: "Blimp",
+  hubschrauber: "Helicopter",
+  rakete: "Rocket",
+  "space-shuttle": "Space shuttle",
+  heissluftballon: "Hot air balloon",
+  ufo: "UFO",
+  gleitschirm: "Hang glider",
+  zug: "Train",
+  strassenbahn: "Tram",
+  "u-bahn": "Metro train",
+  lok: "Locomotive",
+  monorail: "Monorail",
+  hochgeschwindigkeitszug: "Bullet train",
+  boot: "Motorboat",
+  schiff: "Cruise ship",
+  frachtschiff: "Cargo ship",
+  yacht: "Yacht",
+  hovercraft: "Hovercraft",
+  "u-boot": "Submarine",
+  arzt: "Doctor",
+  polizist: "Police officer",
+  feuerwehrmann: "Firefighter",
+  lehrer: "Teacher",
+  koch: "Chef",
+  pilot: "Pilot",
+  bauer: "Farmer",
+  bauarbeiter: "Builder",
+  baecker: "Baker",
+  krankenschwester: "Nurse",
+  musiker: "Musician",
+  florist: "Florist",
+  mechaniker: "Mechanic",
+  klempner: "Plumber",
+  schreiner: "Carpenter",
+  astronaut: "Astronaut",
+  forscher: "Scientist",
+  architekt: "Architect",
+  detektiv: "Detective",
+  fotograf: "Photographer",
+  soldat: "Soldier",
+  friseur: "Hairdresser",
+  paketbote: "Delivery person",
+  ente: "Duck",
+  gans: "Goose",
+  truthahn: "Turkey",
+  huhn: "Hen",
+  papagei: "Parrot",
+  pfau: "Peacock",
+  eule: "Owl",
+  kraehe: "Crow",
+  spatz: "Sparrow",
+  taube: "Pigeon",
+  schwan: "Swan",
+  pinguin: "Penguin",
+  specht: "Woodpecker",
+  eisvogel: "Kingfisher",
+  strauss: "Ostrich",
+  kranich: "Crane",
+  rotkehlchen: "Robin",
+  kolibri: "Hummingbird",
+  tukan: "Toucan",
+  hornvogel: "Hornbill",
+  adler: "Eagle",
+  geier: "Vulture",
 };
 
 const ITEM_SEEDS: ItemSeed[] = [
@@ -1334,6 +1460,14 @@ export function getPictureBookById(bookId: BookId) {
   return PICTURE_BOOKS.find((book) => book.id === bookId) ?? null;
 }
 
+export function getEnglishMeaningForBook(bookId: BookId) {
+  return BOOK_ENGLISH_MEANINGS[bookId];
+}
+
+export function getEnglishMeaningForItem(itemId: ItemId) {
+  return ITEM_ENGLISH_MEANINGS[itemId];
+}
+
 function createItemDefinition(item: ItemSeed): ItemDefinition {
   const speechName = `${item.article} ${item.label}`;
   const promptHint = getPromptHint(item.bookId, item.motionStyle);
@@ -1343,6 +1477,8 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
       ? TRANSPORT_ITEM_IMAGES[item.id]
       : item.bookId === "profession"
         ? PROFESSION_ITEM_IMAGES[item.id]
+        : item.bookId === "birds"
+          ? BIRD_ITEM_IMAGES[item.id]
         : undefined);
 
   return {

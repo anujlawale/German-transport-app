@@ -14,7 +14,13 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { FindGameModal } from "./src/components/FindGameModal";
 import { ItemCard } from "./src/components/ItemCard";
 import { SceneWordButton } from "./src/components/SceneWordButton";
-import { getItemsForBook, getPictureBookById, ITEMS, PICTURE_BOOKS } from "./src/data/items";
+import {
+  getEnglishMeaningForItem,
+  getItemsForBook,
+  getPictureBookById,
+  ITEMS,
+  PICTURE_BOOKS,
+} from "./src/data/items";
 import { setSpeechEnabled, speakGerman, stopGermanSpeech } from "./src/utils/audio";
 import {
   clearInteractionQueue,
@@ -1311,6 +1317,11 @@ export default function App() {
                       },
                     ]}
                   >
+                    <View style={styles.previewTranslationBadge}>
+                      <Text style={styles.previewTranslationText}>
+                        {getEnglishMeaningForItem(previewedItem.id)}
+                      </Text>
+                    </View>
                     <View style={styles.previewVisualWrap}>
                       {previewedItem.imageSource ? (
                         <Image
@@ -2088,6 +2099,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     ...createSurfaceShadow("#6e7b87", 0.2, 18, 8, 6),
+  },
+  previewTranslationBadge: {
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  previewTranslationText: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#4c5660",
+    textAlign: "center",
   },
   previewVisualWrap: {
     width: "100%",
