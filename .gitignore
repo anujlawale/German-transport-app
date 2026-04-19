@@ -14,5 +14,3 @@ yarn-error.log*
 *.p8
 *.p12
 *.mobileprovision
-
-assets/sounds/background-music.mp3
