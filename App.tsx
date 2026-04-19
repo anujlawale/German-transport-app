@@ -1311,9 +1311,6 @@ export default function App() {
                       },
                     ]}
                   >
-                    <Text style={styles.previewHint}>
-                      {previewedItem.speechName.split(" ")[0]}
-                    </Text>
                     <View style={styles.previewVisualWrap}>
                       {previewedItem.imageSource ? (
                         <Image
@@ -1326,7 +1323,7 @@ export default function App() {
                       )}
                     </View>
                     <View style={styles.previewBadge}>
-                      <Text style={styles.previewLabel}>{previewedItem.label}</Text>
+                      <Text style={styles.previewLabel}>{previewedItem.speechName}</Text>
                     </View>
                   </Animated.View>
                 </Pressable>
@@ -2092,11 +2089,6 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     ...createSurfaceShadow("#6e7b87", 0.2, 18, 8, 6),
   },
-  previewHint: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#6d6972",
-  },
   previewVisualWrap: {
     width: "100%",
     height: 220,
@@ -2117,11 +2109,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.96)",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
   },
   previewLabel: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "900",
     color: "#675c62",
     textAlign: "center",
