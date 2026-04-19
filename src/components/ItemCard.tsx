@@ -87,6 +87,12 @@ export function ItemCard({
     { translateY: idleFloat },
     { translateX: motion.slideX },
     { translateY: motion.liftY },
+    {
+      rotate: motion.tilt.interpolate({
+        inputRange: [-4, 4],
+        outputRange: ["-4deg", "4deg"],
+      }),
+    },
     { scale: motion.bounce },
   ] as const;
 

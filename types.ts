@@ -5,6 +5,7 @@ export type ItemId = string;
 export type PictureBookId = "transport" | "profession" | "birds";
 export type ItemMotionStyle = "ground" | "air" | "rail" | "water" | "character";
 export type ItemSoundEffect = "bus" | "plane" | "train";
+export type ItemTapReaction = "drive" | "fly" | "bob" | "waddle" | "wave";
 export type BookId = PictureBookId | "mixed";
 
 export type DifficultyLevel = "easy" | "medium" | "advanced";
@@ -21,6 +22,7 @@ export type ItemDefinition = {
   bookId: PictureBookId;
   motionStyle: ItemMotionStyle;
   soundEffect: ItemSoundEffect;
+  tapReaction: ItemTapReaction;
   imageSource?: ImageSourcePropType;
 };
 

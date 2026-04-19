@@ -88,7 +88,7 @@ const SCENE_ITEMS = [
 ] as const;
 
 const ITEMS_PER_PAGE = 3;
-const INITIAL_VISIBLE_ITEMS = createOrderedItemSetForBook("transport", 0);
+const INITIAL_VISIBLE_ITEMS = createRandomPageForBook("transport");
 const PRAISE_MESSAGES = [
   "Ja, genau!",
   "Wunderbar!",
@@ -553,7 +553,7 @@ export default function App() {
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
-    const nextItems = createOrderedItemSetForBook(activeBookId, 0);
+    const nextItems = createRandomPageForBook(activeBookId);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
     setPageHistoryIndex(0);
@@ -565,7 +565,7 @@ export default function App() {
 
   function closeFindGame() {
     setIsFreePlayMode(true);
-    const nextItems = createOrderedItemSetForBook(activeBookId, 0);
+    const nextItems = createRandomPageForBook(activeBookId);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
     setPageHistoryIndex(0);
@@ -606,7 +606,10 @@ export default function App() {
       return;
     }
 
-    const nextItems = createOrderedItemSetForBook(activeBookId, nextIndex);
+    const seenIds = pageHistory
+      .slice(0, nextIndex)
+      .flatMap((page) => page.map((item) => item.id));
+    const nextItems = createRandomPageForBook(activeBookId, seenIds);
     transitionToItems(nextItems);
     setPageHistory((current) => [...current, nextItems]);
     setPageHistoryIndex(nextIndex);
@@ -741,7 +744,7 @@ export default function App() {
   function activatePreviewBook() {
     const nextBook = previewBook;
     setActiveBookId(nextBook.id);
-    const nextItems = createOrderedItemSetForBook(nextBook.id, 0);
+    const nextItems = createRandomPageForBook(nextBook.id);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
     setPageHistoryIndex(0);
@@ -1452,12 +1455,12 @@ function createRandomItemSetForBook(bookId: BookId, excludedIds: ItemId[] = []) 
   return pickUniqueItems(pool, ITEMS_PER_PAGE);
 }
 
-function createOrderedItemSetForBook(bookId: BookId, pageIndex: number) {
+function createRandomPageForBook(bookId: BookId, seenIds: ItemId[] = []) {
   const eligibleItems = getItemsForBook(bookId);
-  const startIndex = pageIndex * ITEMS_PER_PAGE;
-  const nextItems = eligibleItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const unseenItems = eligibleItems.filter((item) => !seenIds.includes(item.id));
+  const pool = unseenItems.length > 0 ? unseenItems : eligibleItems;
 
-  return nextItems.length > 0 ? nextItems : eligibleItems.slice(0, ITEMS_PER_PAGE);
+  return pickUniqueItems(pool, ITEMS_PER_PAGE);
 }
 
 function pickTargetItem(items: ItemDefinition[], previousItemId?: ItemId) {

@@ -27,75 +27,8 @@ export function createItemMotionValues(): ItemMotionValues {
 export function runTapAnimation(item: ItemDefinition, motion: ItemMotionValues) {
   stopMotion(motion);
 
-  if (item.motionStyle === "ground") {
-    Animated.parallel([
-      Animated.sequence([
-        springScale(motion.bounce, 0.93),
-        springScale(motion.bounce, 1.08),
-        springScale(motion.bounce, 1),
-      ]),
-      Animated.sequence([
-        timingMotion(motion.slideX, -7, 70),
-        timingMotion(motion.slideX, 8, 90),
-        timingMotion(motion.slideX, -4, 70),
-        timingMotion(motion.slideX, 0, 80),
-      ]),
-    ]).start();
-    return;
-  }
-
-  if (item.motionStyle === "air") {
-    Animated.parallel([
-      Animated.sequence([
-        timingMotion(motion.liftY, -12, 140),
-        timingMotion(motion.liftY, -6, 120),
-        timingMotion(motion.liftY, 0, 160),
-      ]),
-      Animated.sequence([
-        timingMotion(motion.tilt, -1, 120),
-        timingMotion(motion.tilt, 0.7, 140),
-        timingMotion(motion.tilt, 0, 140),
-      ]),
-      Animated.sequence([
-        springScale(motion.bounce, 1.05),
-        springScale(motion.bounce, 1),
-      ]),
-    ]).start();
-    return;
-  }
-
-  if (item.motionStyle === "water") {
-    Animated.parallel([
-      Animated.sequence([
-        timingMotion(motion.liftY, -8, 130),
-        timingMotion(motion.liftY, -2, 110),
-        timingMotion(motion.liftY, 0, 150),
-      ]),
-      Animated.sequence([
-        timingMotion(motion.tilt, -0.8, 120),
-        timingMotion(motion.tilt, 0.8, 140),
-        timingMotion(motion.tilt, 0, 130),
-      ]),
-      Animated.sequence([
-        springScale(motion.bounce, 1.04),
-        springScale(motion.bounce, 1),
-      ]),
-    ]).start();
-    return;
-  }
-
-  Animated.parallel([
-    Animated.sequence([
-      timingMotion(motion.slideX, 10, 90),
-      timingMotion(motion.slideX, -5, 90),
-      timingMotion(motion.slideX, 0, 100),
-    ]),
-    Animated.sequence([
-      springScale(motion.bounce, 1.06),
-      springScale(motion.bounce, 0.98),
-      springScale(motion.bounce, 1),
-    ]),
-  ]).start();
+  const animation = getTapReactionAnimation(item, motion);
+  animation.start();
 }
 
 export function runCelebrationAnimation(item: ItemDefinition, motion: ItemMotionValues) {
@@ -213,4 +146,101 @@ function timingMotion(value: Animated.Value, toValue: number, duration: number) 
     easing: MOTION_EASING,
     useNativeDriver: false,
   });
+}
+
+function getTapReactionAnimation(item: ItemDefinition, motion: ItemMotionValues) {
+  switch (item.tapReaction) {
+    case "drive":
+      return Animated.parallel([
+        Animated.sequence([
+          springScale(motion.bounce, 0.94),
+          springScale(motion.bounce, 1.08),
+          springScale(motion.bounce, 1),
+        ]),
+        Animated.sequence([
+          timingMotion(motion.slideX, -8, 70),
+          timingMotion(motion.slideX, 10, 90),
+          timingMotion(motion.slideX, -4, 70),
+          timingMotion(motion.slideX, 0, 80),
+        ]),
+        Animated.sequence([
+          timingMotion(motion.tilt, -0.4, 70),
+          timingMotion(motion.tilt, 0.5, 90),
+          timingMotion(motion.tilt, 0, 80),
+        ]),
+      ]);
+    case "fly":
+      return Animated.parallel([
+        Animated.sequence([
+          timingMotion(motion.liftY, -13, 130),
+          timingMotion(motion.liftY, -7, 110),
+          timingMotion(motion.liftY, 0, 150),
+        ]),
+        Animated.sequence([
+          timingMotion(motion.tilt, -1.4, 120),
+          timingMotion(motion.tilt, 0.9, 130),
+          timingMotion(motion.tilt, 0, 140),
+        ]),
+        Animated.sequence([
+          springScale(motion.bounce, 1.05),
+          springScale(motion.bounce, 1),
+        ]),
+      ]);
+    case "bob":
+      return Animated.parallel([
+        Animated.sequence([
+          timingMotion(motion.liftY, -7, 110),
+          timingMotion(motion.liftY, -2, 90),
+          timingMotion(motion.liftY, -6, 100),
+          timingMotion(motion.liftY, 0, 130),
+        ]),
+        Animated.sequence([
+          timingMotion(motion.tilt, -0.7, 100),
+          timingMotion(motion.tilt, 0.7, 110),
+          timingMotion(motion.tilt, 0, 120),
+        ]),
+        Animated.sequence([
+          springScale(motion.bounce, 1.03),
+          springScale(motion.bounce, 1),
+        ]),
+      ]);
+    case "waddle":
+      return Animated.parallel([
+        Animated.sequence([
+          timingMotion(motion.slideX, -5, 80),
+          timingMotion(motion.slideX, 6, 90),
+          timingMotion(motion.slideX, -4, 80),
+          timingMotion(motion.slideX, 4, 90),
+          timingMotion(motion.slideX, 0, 80),
+        ]),
+        Animated.sequence([
+          timingMotion(motion.tilt, -1.1, 80),
+          timingMotion(motion.tilt, 1.1, 90),
+          timingMotion(motion.tilt, -0.8, 80),
+          timingMotion(motion.tilt, 0.8, 90),
+          timingMotion(motion.tilt, 0, 80),
+        ]),
+        Animated.sequence([
+          springScale(motion.bounce, 1.03),
+          springScale(motion.bounce, 1),
+        ]),
+      ]);
+    case "wave":
+      return Animated.parallel([
+        Animated.sequence([
+          springScale(motion.bounce, 1.07),
+          springScale(motion.bounce, 0.98),
+          springScale(motion.bounce, 1),
+        ]),
+        Animated.sequence([
+          timingMotion(motion.liftY, -5, 100),
+          timingMotion(motion.liftY, 0, 120),
+        ]),
+        Animated.sequence([
+          timingMotion(motion.tilt, -0.9, 100),
+          timingMotion(motion.tilt, 0.9, 100),
+          timingMotion(motion.tilt, 0, 110),
+        ]),
+      ]);
+  }
 }

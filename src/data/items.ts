@@ -7,6 +7,7 @@ import {
   PictureBookDefinition,
   PictureBookId,
   ItemSoundEffect,
+  ItemTapReaction,
 } from "../../types";
 
 type ItemSeed = {
@@ -19,6 +20,7 @@ type ItemSeed = {
   bookId: PictureBookId;
   motionStyle: ItemMotionStyle;
   soundEffect: ItemSoundEffect;
+  tapReaction?: ItemTapReaction;
   advancedPrompts?: string[];
   imageSource?: ItemDefinition["imageSource"];
 };
@@ -136,6 +138,16 @@ export const BOOK_ENGLISH_MEANINGS: Record<BookId, string> = {
   birds: "Birds",
   mixed: "Mixed",
 };
+
+const WADDLE_ITEM_IDS = new Set<ItemId>([
+  "ente",
+  "gans",
+  "truthahn",
+  "huhn",
+  "pfau",
+  "pinguin",
+  "strauss",
+]);
 
 export const ITEM_ENGLISH_MEANINGS: Record<ItemId, string> = {
   bus: "Bus",
@@ -1471,6 +1483,7 @@ export function getEnglishMeaningForItem(itemId: ItemId) {
 function createItemDefinition(item: ItemSeed): ItemDefinition {
   const speechName = `${item.article} ${item.label}`;
   const promptHint = getPromptHint(item.bookId, item.motionStyle);
+  const tapReaction = item.tapReaction ?? getTapReaction(item);
   const imageSource =
     item.imageSource ??
     (item.bookId === "transport"
@@ -1498,8 +1511,29 @@ function createItemDefinition(item: ItemSeed): ItemDefinition {
     bookId: item.bookId,
     motionStyle: item.motionStyle,
     soundEffect: item.soundEffect,
+    tapReaction,
     imageSource,
   };
+}
+
+function getTapReaction(item: ItemSeed): ItemTapReaction {
+  if (item.bookId === "profession") {
+    return "wave";
+  }
+
+  if (WADDLE_ITEM_IDS.has(item.id)) {
+    return "waddle";
+  }
+
+  if (item.motionStyle === "air") {
+    return "fly";
+  }
+
+  if (item.motionStyle === "water") {
+    return "bob";
+  }
+
+  return "drive";
 }
 
 function getPromptHint(bookId: PictureBookId, motionStyle: ItemMotionStyle) {
