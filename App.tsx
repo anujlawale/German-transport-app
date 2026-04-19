@@ -81,7 +81,8 @@ const SCENE_ITEMS = [
   },
 ] as const;
 
-const INITIAL_VISIBLE_ITEMS = createItemSetForBook("transport");
+const ITEMS_PER_PAGE = 3;
+const INITIAL_VISIBLE_ITEMS = createOrderedItemSetForBook("transport", 0);
 const PRAISE_MESSAGES = [
   "Ja, genau!",
   "Wunderbar!",
@@ -187,6 +188,11 @@ export default function App() {
     : SCENE_ITEMS;
   const previewBook = PICTURE_BOOKS[previewBookIndex] ?? PICTURE_BOOKS[0];
   const activeBook = getPictureBookById(activeBookId) ?? PICTURE_BOOKS[0];
+  const totalPageCount = Math.max(
+    1,
+    Math.ceil(getItemsForBook(activeBookId).length / ITEMS_PER_PAGE),
+  );
+  const isLastPageInBook = pageHistoryIndex >= totalPageCount - 1;
 
   useEffect(() => {
     void initializeSoundEffects();
@@ -383,7 +389,7 @@ export default function App() {
   }
 
   function handleItemLongPress(item: ItemDefinition) {
-    if (isFindGameModalVisible || showParentSettings || isGameMode) {
+    if (isFindGameModalVisible || showParentSettings) {
       return;
     }
 
@@ -541,7 +547,7 @@ export default function App() {
   function startFreePlay() {
     clearGameRound();
     setIsFreePlayMode(true);
-    const nextItems = createItemSetForBook(activeBookId, visibleItems.map((item) => item.id));
+    const nextItems = createOrderedItemSetForBook(activeBookId, 0);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
     setPageHistoryIndex(0);
@@ -553,7 +559,7 @@ export default function App() {
 
   function closeFindGame() {
     setIsFreePlayMode(true);
-    const nextItems = createItemSetForBook(activeBookId, visibleItems.map((item) => item.id));
+    const nextItems = createOrderedItemSetForBook(activeBookId, 0);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
     setPageHistoryIndex(0);
@@ -582,6 +588,10 @@ export default function App() {
     }
 
     const nextIndex = pageHistoryIndex + 1;
+    if (nextIndex >= totalPageCount) {
+      return;
+    }
+
     const existingItems = pageHistory[nextIndex];
 
     if (existingItems) {
@@ -590,7 +600,7 @@ export default function App() {
       return;
     }
 
-    const nextItems = createItemSetForBook(activeBookId, visibleItems.map((item) => item.id));
+    const nextItems = createOrderedItemSetForBook(activeBookId, nextIndex);
     transitionToItems(nextItems);
     setPageHistory((current) => [...current, nextItems]);
     setPageHistoryIndex(nextIndex);
@@ -606,7 +616,7 @@ export default function App() {
     },
     bookId: BookId = activeBookId,
   ) {
-    const nextItems = createItemSetForBook(bookId, visibleItems.map((item) => item.id));
+    const nextItems = createRandomItemSetForBook(bookId, visibleItems.map((item) => item.id));
     const nextItem = pickTargetItem(nextItems, previousItemId);
     const nextPrompt = getGamePrompt(nextItem);
     transitionToItems(nextItems);
@@ -725,7 +735,7 @@ export default function App() {
   function activatePreviewBook() {
     const nextBook = previewBook;
     setActiveBookId(nextBook.id);
-    const nextItems = createItemSetForBook(nextBook.id, visibleItems.map((item) => item.id));
+    const nextItems = createOrderedItemSetForBook(nextBook.id, 0);
     transitionToItems(nextItems);
     setPageHistory([nextItems]);
     setPageHistoryIndex(0);
@@ -1218,10 +1228,12 @@ export default function App() {
                   accessibilityLabel="Nächste Seite"
                   style={[
                     styles.pageBrowseArrow,
-                    isFindGameModalVisible || isGameMode ? styles.pageBrowseArrowDisabled : null,
+                    isFindGameModalVisible || isGameMode || isLastPageInBook
+                      ? styles.pageBrowseArrowDisabled
+                      : null,
                   ]}
                   onPress={() => browsePage("right")}
-                  disabled={isFindGameModalVisible || isGameMode}
+                  disabled={isFindGameModalVisible || isGameMode || isLastPageInBook}
                 >
                   <Text style={styles.pageBrowseArrowText}>›</Text>
                 </Pressable>
@@ -1425,11 +1437,19 @@ function createItemTokenMap() {
   }, {});
 }
 
-function createItemSetForBook(bookId: BookId, excludedIds: ItemId[] = []) {
+function createRandomItemSetForBook(bookId: BookId, excludedIds: ItemId[] = []) {
   const eligibleItems = getItemsForBook(bookId);
   const preferredPool = eligibleItems.filter((item) => !excludedIds.includes(item.id));
-  const pool = preferredPool.length >= 3 ? preferredPool : eligibleItems;
-  return pickUniqueItems(pool, 3);
+  const pool = preferredPool.length >= ITEMS_PER_PAGE ? preferredPool : eligibleItems;
+  return pickUniqueItems(pool, ITEMS_PER_PAGE);
+}
+
+function createOrderedItemSetForBook(bookId: BookId, pageIndex: number) {
+  const eligibleItems = getItemsForBook(bookId);
+  const startIndex = pageIndex * ITEMS_PER_PAGE;
+  const nextItems = eligibleItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  return nextItems.length > 0 ? nextItems : eligibleItems.slice(0, ITEMS_PER_PAGE);
 }
 
 function pickTargetItem(items: ItemDefinition[], previousItemId?: ItemId) {
