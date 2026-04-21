@@ -34,7 +34,6 @@ import {
 } from "./src/utils/interactionCoordinator";
 import { INTERACTION_TIMING } from "./src/utils/interactionTiming";
 import {
-  initializeSoundEffects,
   releaseSoundEffects,
   setBackgroundMusicVolume,
   setSoundEnabled,
@@ -211,8 +210,6 @@ export default function App() {
   const isLastPageInBook = pageHistoryIndex >= totalPageCount - 1;
 
   useEffect(() => {
-    void initializeSoundEffects();
-
     return () => {
       if (nextRoundTimeoutRef.current) {
         clearTimeout(nextRoundTimeoutRef.current);
