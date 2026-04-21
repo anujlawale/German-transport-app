@@ -38,7 +38,6 @@ import {
   releaseSoundEffects,
   setBackgroundMusicVolume,
   setSoundEnabled,
-  startBackgroundMusic,
   stopAllSoundEffects,
   stopBackgroundMusic,
 } from "./src/utils/soundEffects";
@@ -242,12 +241,9 @@ export default function App() {
   useEffect(() => {
     setSoundEnabled(soundsOn);
 
-    if (soundsOn) {
-      void startBackgroundMusic();
-      return;
+    if (!soundsOn) {
+      stopBackgroundMusic();
     }
-
-    stopBackgroundMusic();
   }, [soundsOn]);
 
   useEffect(() => {
